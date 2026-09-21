@@ -1,0 +1,9 @@
+{
+  "id": "evt_001",
+  "timestamp": "2026-09-21T09:00:00Z",
+  "goal": "deploy_application",
+  "action": "clear_cache",
+  "result": "success",
+  "energy_cost": 3,
+  "confidence": 0.84
+}

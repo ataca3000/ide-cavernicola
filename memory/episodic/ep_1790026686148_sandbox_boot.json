@@ -1,0 +1,9 @@
+{
+  "episode_id": "ep_1790026686148_sandbox_boot",
+  "event": "sandbox_boot",
+  "timestamp": 1790026686.1487834,
+  "details": {
+    "status": "ok",
+    "latency_ms": 120
+  }
+}

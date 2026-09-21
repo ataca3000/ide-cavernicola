@@ -1,0 +1,5 @@
+{
+  "hypothesis": "upgrade_everything",
+  "failures": 17,
+  "reason": "introduced_instability"
+}

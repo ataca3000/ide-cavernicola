@@ -1,0 +1,227 @@
+import json
+import os
+import time
+from pathlib import Path
+from typing import Dict, Any, List, Optional
+
+
+class MemoryManager:
+    """
+    IDC v0.2 Memory Manager
+    Coordinates the four core persistence layers:
+      - Episodic Memory: past events, actions, outcomes, costs
+      - Procedural Memory: repeatable execution steps, success rates
+      - Causal Memory: verified cause-and-effect rules (A -> B)
+      - Causal Trash: rejected hypotheses and lessons from mistakes
+    """
+
+    def __init__(self, base_dir: Optional[str] = None):
+        if base_dir is None:
+            # Default to the project memory directory
+            base_dir = str(Path(__file__).parent.parent / "memory")
+        self.base_dir = Path(base_dir)
+        self.episodic_dir = self.base_dir / "episodic"
+        self.procedural_dir = self.base_dir / "procedural"
+        self.causal_dir = self.base_dir / "causal"
+        self.trash_dir = self.base_dir / "trash"
+        self.identity_dir = self.base_dir / "identity"
+
+        for p in [self.episodic_dir, self.procedural_dir, self.causal_dir, self.trash_dir, self.identity_dir]:
+            p.mkdir(parents=True, exist_ok=True)
+
+    # --- Generic Save ---
+    def save_event(self, event: Dict[str, Any], path: str) -> None:
+        """Original generic event saver."""
+        target = Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with open(target, "w", encoding="utf-8") as f:
+            json.dump(event, f, indent=2)
+
+    # --- 1. Episodic Memory ---
+    def record_episode(
+        self,
+        goal: str,
+        action: str,
+        result: str,
+        energy_cost: float,
+        confidence: float = 1.0,
+        episode_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Stores a distinct past event in memory/episodic/."""
+        if not episode_id:
+            episode_id = f"evt_{int(time.time() * 1000)}"
+        episode = {
+            "id": episode_id,
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "goal": goal,
+            "action": action,
+            "result": result,
+            "energy_cost": energy_cost,
+            "confidence": confidence
+        }
+        file_path = self.episodic_dir / f"{episode_id}.json"
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(episode, f, indent=2)
+        return episode
+
+    def list_episodes(self, goal: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Retrieves past episodes, optionally filtered by goal."""
+        episodes = []
+        for file in self.episodic_dir.glob("*.json"):
+            try:
+                with open(file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if goal is None or data.get("goal") == goal:
+                        episodes.append(data)
+            except Exception:
+                continue
+        return sorted(episodes, key=lambda x: x.get("timestamp", ""))
+
+    # --- 2. Procedural Memory ---
+    def save_procedure(self, name: str, steps: List[str], success_rate: float = 1.0) -> Dict[str, Any]:
+        """Saves a repeatable procedure in memory/procedural/."""
+        proc = {
+            "name": name,
+            "steps": steps,
+            "success_rate": round(success_rate, 2),
+            "updated_at": time.strftime("%Y-%m-%d", time.gmtime())
+        }
+        file_path = self.procedural_dir / f"{name}.json"
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(proc, f, indent=2)
+        return proc
+
+    def get_procedure(self, name: str) -> Optional[Dict[str, Any]]:
+        """Loads a procedure by name."""
+        file_path = self.procedural_dir / f"{name}.json"
+        if not file_path.exists():
+            return None
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def update_procedure_success(self, name: str, success: bool) -> Optional[Dict[str, Any]]:
+        """Dynamically updates the success rate of an existing procedure."""
+        proc = self.get_procedure(name)
+        if not proc:
+            return None
+        current_rate = proc.get("success_rate", 1.0)
+        # Moving average update
+        alpha = 0.2
+        new_rate = (1.0 - alpha) * current_rate + alpha * (1.0 if success else 0.0)
+        proc["success_rate"] = round(new_rate, 2)
+        proc["updated_at"] = time.strftime("%Y-%m-%d", time.gmtime())
+        file_path = self.procedural_dir / f"{name}.json"
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(proc, f, indent=2)
+        return proc
+
+    # --- 3. Causal Memory ---
+    def save_causal_rule(
+        self,
+        rule_id: str,
+        cause: str,
+        effect: str,
+        confidence: float,
+        replications: int = 1,
+        conditions: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """Saves a validated causal rule in memory/causal/."""
+        rule = {
+            "id": rule_id,
+            "cause": cause,
+            "effect": effect,
+            "confidence": round(confidence, 2),
+            "replications": replications,
+            "conditions": conditions or ["stable_environment"],
+            "created_at": time.strftime("%Y-%m-%d", time.gmtime())
+        }
+        file_path = self.causal_dir / f"{rule_id}.json"
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(rule, f, indent=2)
+        return rule
+
+    def get_causal_rule(self, rule_id: str) -> Optional[Dict[str, Any]]:
+        direct = self.causal_dir / f"{rule_id}.json"
+        if direct.exists():
+            with open(direct, "r", encoding="utf-8") as f:
+                return json.load(f)
+        for file in self.causal_dir.glob("*.json"):
+            try:
+                with open(file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if data.get("id") == rule_id:
+                        return data
+            except Exception:
+                continue
+        return None
+
+    def find_rules_by_cause(self, cause_keyword: str) -> List[Dict[str, Any]]:
+        """Finds causal rules matching a cause condition."""
+        matches = []
+        for file in self.causal_dir.glob("*.json"):
+            try:
+                with open(file, "r", encoding="utf-8") as f:
+                    rule = json.load(f)
+                    if cause_keyword.lower() in rule.get("cause", "").lower():
+                        matches.append(rule)
+            except Exception:
+                continue
+        return matches
+
+    def reinforce_rule(self, rule_id: str, verified: bool) -> Optional[Dict[str, Any]]:
+        """Increments replication count and reinforces confidence."""
+        target_file = self.causal_dir / f"{rule_id}.json"
+        rule = None
+        if target_file.exists():
+            with open(target_file, "r", encoding="utf-8") as f:
+                rule = json.load(f)
+        else:
+            for file in self.causal_dir.glob("*.json"):
+                try:
+                    with open(file, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        if data.get("id") == rule_id:
+                            rule = data
+                            target_file = file
+                            break
+                except Exception:
+                    continue
+
+        if not rule:
+            return None
+
+        rule["replications"] = rule.get("replications", 0) + 1
+        curr_conf = rule.get("confidence", 0.5)
+        delta = 0.05 if verified else -0.15
+        rule["confidence"] = round(min(1.0, max(0.0, curr_conf + delta)), 2)
+        with open(target_file, "w", encoding="utf-8") as f:
+            json.dump(rule, f, indent=2)
+        return rule
+
+
+    # --- 4. Causal Trash ---
+    def record_rejected(self, hypothesis: str, reason: str, failures: int = 1) -> Dict[str, Any]:
+        """Stores a failed hypothesis to prevent repeating mistakes."""
+        slug = hypothesis.lower().replace(" ", "_")[:30]
+        rejected = {
+            "hypothesis": hypothesis,
+            "failures": failures,
+            "reason": reason,
+            "rejected_at": time.strftime("%Y-%m-%d", time.gmtime())
+        }
+        file_path = self.trash_dir / f"rejected_{slug}.json"
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(rejected, f, indent=2)
+        return rejected
+
+    def is_rejected(self, hypothesis_keyword: str) -> bool:
+        """Checks if a hypothesis has been rejected before."""
+        for file in self.trash_dir.glob("*.json"):
+            try:
+                with open(file, "r", encoding="utf-8") as f:
+                    rej = json.load(f)
+                    if hypothesis_keyword.lower() in rej.get("hypothesis", "").lower():
+                        return True
+            except Exception:
+                continue
+        return False

@@ -1,0 +1,12 @@
+{
+  "id": "rule_001",
+  "cause": "persistent_cache",
+  "effect": "faster_build",
+  "confidence": 0.96,
+  "replications": 83,
+  "conditions": [
+    "same_dependencies",
+    "stable_environment"
+  ],
+  "created_at": "2026-09-21"
+}

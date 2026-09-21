@@ -1,0 +1,9 @@
+{
+  "name": "deploy_nextjs",
+  "steps": [
+    "install_dependencies",
+    "build_project",
+    "deploy"
+  ],
+  "success_rate": 0.93
+}

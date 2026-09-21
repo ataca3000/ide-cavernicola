@@ -1,0 +1,9 @@
+{
+  "rule_id": "RULE-001",
+  "cause": "persistent_drive_cache",
+  "effect": "faster_boot_speed",
+  "confidence": 0.95,
+  "replications": 42,
+  "conditions": {},
+  "stored_at": 1790026686.14939
+}
