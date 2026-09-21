@@ -9,6 +9,9 @@ class EnergyManager:
     def available(self):
         return self.energy
 
+    def can_afford(self, amount):
+        return self.energy >= amount
+
     def mode(self):
         if self.energy <= 5:
             return "SURVIVAL"
