@@ -11,6 +11,7 @@ import { ConnectionModal } from './components/ConnectionModal';
 import { MissionHub } from './components/MissionHub';
 import { RealResultsViewer } from './components/RealResultsViewer';
 import { CognitiveChatBar } from './components/CognitiveChatBar';
+import { AgentBoosterStation } from './components/AgentBoosterStation';
 
 export const App: React.FC = () => {
   // Engines instances kept across renders
@@ -20,7 +21,7 @@ export const App: React.FC = () => {
   // Simulation execution state
   const [isRunning, setIsRunning] = useState<boolean>(true);
   const [speed, setSpeed] = useState<number>(1);
-  const [activeTab, setActiveTab] = useState<'sim' | 'translation'>('sim');
+  const [activeTab, setActiveTab] = useState<'sim' | 'booster' | 'translation'>('sim');
 
   // Server & API Configuration State
   const [serverUrl, setServerUrl] = useState<string>('http://127.0.0.1:8000');
@@ -223,6 +224,14 @@ export const App: React.FC = () => {
         </button>
 
         <button
+          className={`tab-nav-btn ${activeTab === 'booster' ? 'active' : ''}`}
+          onClick={() => setActiveTab('booster')}
+        >
+          <span className="tab-icon">⚡</span>
+          <span>ESTACIÓN DE SUPERPODERES (BYOA)</span>
+        </button>
+
+        <button
           className={`tab-nav-btn ${activeTab === 'translation' ? 'active' : ''}`}
           onClick={() => setActiveTab('translation')}
         >
@@ -297,6 +306,18 @@ export const App: React.FC = () => {
               </div>
             </div>
           </div>
+        ) : activeTab === 'booster' ? (
+          <AgentBoosterStation
+            serverUrl={serverUrl}
+            serverStatus={serverStatus}
+            onExecuteInWorld={(title) => {
+              agent.setGoal(`[SUPERPODER] ${title}`);
+              agent.addLog('ACTION', `Inyectando superpoder cognitivo al agente huésped: ${title}`, true);
+              const ag = world.getAgent();
+              agent.addFloatingText(ag.x, ag.y, 'Superpoder IDC ⚡', '#38bdf8');
+              setTick((t) => t + 1);
+            }}
+          />
         ) : (
           /* Translation / Architectural View */
           <div className="translation-view-card">

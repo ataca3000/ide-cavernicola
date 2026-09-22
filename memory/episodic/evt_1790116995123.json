@@ -1,0 +1,9 @@
+{
+  "id": "evt_1790116995123",
+  "timestamp": "2026-09-22T22:43:15Z",
+  "goal": "BOOST_GUEST_AGENT",
+  "action": "Refactorizar decoradores",
+  "result": "success",
+  "energy_cost": 5.0,
+  "confidence": 1.0
+}
