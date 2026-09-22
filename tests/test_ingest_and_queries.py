@@ -148,7 +148,7 @@ def test_causal_memory_short_circuit(tmp_path):
         successful_action="enable_docker_layer_cache",
     )
 
-    agent = IDCAgent(llm_plugin=DummyLLM(), memory_path=str(tmp_path / "memory"))
+    agent = IDCAgent(llm_plugin=DummyLLM(), memory_dir=str(tmp_path / "memory"))
 
     goal = Goal(id="g1", description="acelerar compilacion de contenedores docker", priority=0.9)
     res = agent.brainstorm(goal)

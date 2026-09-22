@@ -1,8 +1,8 @@
 {
   "id": "event_0001",
-  "timestamp": "2026-09-22T08:49:00Z",
+  "timestamp": "2026-09-22T08:49:26Z",
   "goal": "Optimizar pipelines CI/CD",
-  "action": "cache_pip_dependencies",
+  "action": "analyze_ci_cd_bottlenecks_via_profile",
   "result": "SUCCESS",
   "energy_cost": 1.5,
   "confidence": 0.95
