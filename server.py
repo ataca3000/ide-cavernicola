@@ -12,6 +12,7 @@ import os
 import sys
 import traceback
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from pathlib import Path
 from typing import Dict, Any
 
 # Ensure project root is in path
@@ -82,9 +83,19 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
     def handle_status(self):
         """Returns engine status, database counts, and system metrics."""
         try:
-            db_stats = memory_mgr.get_sqlite_stats()
             rules = memory_mgr.list_causal_rules()
             trash = memory_mgr.get_rejected_list()
+
+            db_path = Path(CURRENT_DIR) / "memory" / "idc.db"
+            db_summary = {}
+            if db_path.exists():
+                try:
+                    from scripts.idc_queries import IDCAnalytics
+                    analytics = IDCAnalytics(db_path)
+                    db_summary = analytics.get_inventory_summary()
+                    analytics.close()
+                except Exception as e:
+                    db_summary = {"error": str(e)}
 
             data = {
                 "status": "online",
@@ -92,8 +103,9 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
                 "mode": CONFIG["mode"],
                 "has_gemini_key": bool(CONFIG["gemini_api_key"]),
                 "sqlite_db": {
-                    "path": memory_mgr.db_path,
-                    "episodes": db_stats.get("total_episodes", 0),
+                    "exists": db_path.exists(),
+                    "path": str(db_path),
+                    "inventory": db_summary,
                     "causal_rules": len(rules),
                     "causal_trash_items": len(trash),
                 },
@@ -139,6 +151,7 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
 
             self._send_json(200, result)
         except Exception as e:
+            traceback.print_exc()
             self._send_json(500, {
                 "success": False,
                 "error": str(e),
@@ -147,56 +160,68 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
 
     def _run_repo_scan_mission(self) -> Dict[str, Any]:
         """Real AST and technical debt analysis of the repository."""
-        report = repo_analyzer.analyze_all()
-        files = report.get("files", [])
-        ci = report.get("ci_status", {})
-        debt = report.get("technical_debt", {})
+        summary = repo_analyzer.generate_repository_summary()
+        metrics = summary.get("metrics", {})
+        ci = summary.get("ci_workflows", [])
+        debt = summary.get("technical_debt", [])
+        classes = summary.get("classes", [])
 
         return {
             "success": True,
             "mission_type": "scan",
             "title": "Escaneo Profundo de Repositorio (AST & Deuda Técnica)",
-            "summary": f"Se analizaron {len(files)} archivos de código mediante AST. Deuda técnica calculada: {debt.get('total_debt_score', 0)} puntos.",
+            "summary": f"Se analizaron {metrics.get('total_python_files', 0)} módulos Python ({metrics.get('total_lines_of_code', 0)} LOC). Se detectaron {len(classes)} clases y {len(debt)} indicadores de deuda técnica.",
             "metrics": {
-                "archivos_analizados": len(files),
-                "ci_workflows": len(ci.get("workflows", [])),
-                "archivos_sin_tests": len(debt.get("untested_files", [])),
-                "puntuacion_deuda": debt.get("total_debt_score", 0),
+                "archivos_python": metrics.get("total_python_files", 0),
+                "lineas_de_codigo": metrics.get("total_lines_of_code", 0),
+                "clases_detectadas": len(classes),
+                "items_deuda_tecnica": len(debt),
+                "ci_workflows": len(ci),
             },
             "timeline": [
-                {"step": 1, "action": "scan_ast", "detail": "Inspeccionando arboles sintacticos (AST) de modulos en core/ y contracts/"},
-                {"step": 2, "action": "ci_inspection", "detail": "Verificando workflows de GitHub Actions en .github/workflows/"},
-                {"step": 3, "action": "debt_calculation", "detail": "Correlacionando cobertura de tests y complejidad ciclomatica"},
-                {"step": 4, "action": "consolidation", "detail": "Consolidando reporte en el motor de memoria de IDC"},
+                {"step": 1, "action": "scan_ast", "detail": "Inspeccionando árboles sintácticos (AST) de módulos en core/ y contracts/"},
+                {"step": 2, "action": "ci_inspection", "detail": f"Verificando {len(ci)} workflows de GitHub Actions en .github/workflows/"},
+                {"step": 3, "action": "debt_calculation", "detail": f"Calculando {len(debt)} marcadores de deuda y acoplamiento"},
+                {"step": 4, "action": "consolidation", "detail": "Mapeo topológico consolidado en memoria de IDC"},
             ],
             "raw_output": {
-                "ci_status": ci,
-                "technical_debt": debt,
-                "first_5_files": files[:5],
+                "ci_workflows": ci,
+                "technical_debt_sample": debt[:8],
+                "classes_sample": classes[:10],
             }
         }
 
     def _run_memory_audit_mission(self) -> Dict[str, Any]:
         """Audits SQLite memory and causal rules."""
-        db_stats = memory_mgr.get_sqlite_stats()
         rules = memory_mgr.list_causal_rules()
         trash = memory_mgr.get_rejected_list()
+        db_path = Path(CURRENT_DIR) / "memory" / "idc.db"
+        db_stats = {}
+        if db_path.exists():
+            try:
+                from scripts.idc_queries import IDCAnalytics
+                analytics = IDCAnalytics(db_path)
+                db_stats = analytics.get_inventory_summary()
+                analytics.close()
+            except Exception as e:
+                db_stats = {"error": str(e)}
 
+        total_obs = db_stats.get("total_observations", len(rules))
         return {
             "success": True,
             "mission_type": "memory",
             "title": "Auditoría de Memoria Ciberfísica y Reglas Causales",
-            "summary": f"Base de datos SQLite: {db_stats.get('total_episodes', 0)} episodios. {len(rules)} reglas causales activas y {len(trash)} acciones vetadas en Causal Trash.",
+            "summary": f"Base de datos SQLite: {total_obs} observaciones. {len(rules)} reglas causales activas y {len(trash)} acciones vetadas en Causal Trash.",
             "metrics": {
-                "total_episodios": db_stats.get("total_episodes", 0),
+                "total_observaciones": total_obs,
                 "reglas_causales": len(rules),
                 "acciones_en_trash": len(trash),
-                "tasa_exito_global": f"{db_stats.get('success_rate', 1.0) * 100:.1f}%",
+                "archivos_indexados": db_stats.get("total_files", 0),
             },
             "timeline": [
-                {"step": 1, "action": "sqlite_query", "detail": f"Consultando {memory_mgr.db_path}"},
-                {"step": 2, "action": "cache_index", "detail": "Verificando indices O(1) en memoria volatil"},
-                {"step": 3, "action": "trash_audit", "detail": "Validando cicatrices sistemicas y severidad de colapsos"},
+                {"step": 1, "action": "sqlite_query", "detail": f"Consultando {db_path}"},
+                {"step": 2, "action": "cache_index", "detail": "Verificando índices O(1) en memoria volátil"},
+                {"step": 3, "action": "trash_audit", "detail": "Validando cicatrices sistémicas y severidad de colapsos"},
             ],
             "raw_output": {
                 "db_stats": db_stats,
@@ -277,7 +302,7 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
                 "objetivo": prompt,
                 "accion_seleccionada": chosen_action,
                 "energia_restante": round(state.energy, 1),
-                "modo_metabolico": state.mode,
+                "modo_metabolico": agent.energy.mode() if hasattr(agent, "energy") else "EXPLORATION",
                 "incertidumbre": round(state.uncertainty, 2),
                 "hipotesis_generadas": len(hypothesis),
             },
