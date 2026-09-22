@@ -214,6 +214,8 @@ class MemoryManager:
             json.dump(rejected, f, indent=2)
         return rejected
 
+    add_to_trash = record_rejected
+
     def is_rejected(self, hypothesis_keyword: str) -> bool:
         """Checks if a hypothesis has been rejected before."""
         for file in self.trash_dir.glob("*.json"):

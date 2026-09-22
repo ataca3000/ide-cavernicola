@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ide-cavernicola"
+version = "0.1.0"
+description = "IDC (Inventor Driven Cognition) - Purpose-Driven Cognitive Architecture for Autonomous Agents"
+readme = "README.md"
+authors = [
+  { name = "Luis Felipe Durán Salinas (ATACA3000)", email = "luisduran1390t@gmail.com" }
+]
+license = { text = "Apache-2.0" }
+keywords = ["cognitive-architecture", "autonomous-agents", "causal-ai", "resource-bounded", "decision-making"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+requires-python = ">=3.11"
+dependencies = [
+  "pydantic>=2.0.0",
+  "numpy>=1.24.0"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0.0"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*", "contracts*", "plugins*"]
+exclude = ["tests*", "experiments*", "examples*", "docs*"]
