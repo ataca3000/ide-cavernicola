@@ -74,10 +74,9 @@ def cmd_scan(args):
 def cmd_rules(args):
     """Lists learned causal rules."""
     memory = MemoryManager()
-    causal_dir = Path(memory.memory_paths["causal"])
     rules = []
-    if causal_dir.exists():
-        for rule_file in causal_dir.glob("rule_*.json"):
+    if memory.causal_dir.exists():
+        for rule_file in memory.causal_dir.glob("*.json"):
             try:
                 with open(rule_file, "r", encoding="utf-8") as f:
                     rules.append(json.load(f))
@@ -110,10 +109,9 @@ def cmd_rules(args):
 def cmd_trash(args):
     """Lists causal trash entries (rejected hypotheses and failures)."""
     memory = MemoryManager()
-    trash_dir = Path(memory.memory_paths["causal_trash"])
     items = []
-    if trash_dir.exists():
-        for trash_file in trash_dir.glob("trash_*.json"):
+    if memory.trash_dir.exists():
+        for trash_file in memory.trash_dir.glob("*.json"):
             try:
                 with open(trash_file, "r", encoding="utf-8") as f:
                     items.append(json.load(f))

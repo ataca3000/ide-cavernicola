@@ -1,0 +1,20 @@
+{
+  "id": "rule_7097",
+  "goal": "Reducir latencia de serializacion JSON en el agente",
+  "cause": "switch_to_orjson",
+  "effect": "execution_speedup",
+  "successful_action": "switch_to_orjson",
+  "failed_actions_superseded": [],
+  "confidence": 0.95,
+  "replications": 1,
+  "reuses": 1,
+  "conditions": [
+    "Reducir latencia de serializacion JSON en el agente"
+  ],
+  "metrics_improvement": {
+    "baseline_s": 40.0,
+    "duration_s": 12.8,
+    "improvement_pct": 68.0
+  },
+  "created_at": "2026-09-22"
+}

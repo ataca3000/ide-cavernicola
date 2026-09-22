@@ -33,6 +33,9 @@ dev = [
   "pytest>=7.0.0"
 ]
 
+[project.scripts]
+idc = "core.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["core*", "contracts*", "plugins*"]
