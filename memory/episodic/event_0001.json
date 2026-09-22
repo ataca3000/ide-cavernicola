@@ -1,9 +1,9 @@
 {
   "id": "event_0001",
-  "timestamp": "2026-09-22T19:30:22Z",
-  "goal": "Optimizar pipelines CI/CD",
-  "action": "cache_dependency_downloads",
+  "timestamp": "2026-09-22T21:55:46Z",
+  "goal": "Optimizar el cache de dependencias y evitar bucles en CI",
+  "action": "enable_cache_caching",
   "result": "SUCCESS",
-  "energy_cost": 1.5,
+  "energy_cost": 2.0,
   "confidence": 0.95
 }

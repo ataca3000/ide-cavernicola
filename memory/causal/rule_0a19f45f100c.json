@@ -1,0 +1,19 @@
+{
+  "id": "rule_0a19f45f100c",
+  "goal": "Optimizar el cache de dependencias y evitar bucles en CI",
+  "cause": "enable_cache_caching",
+  "effect": "goal_achieved",
+  "successful_action": "enable_cache_caching",
+  "failed_actions_superseded": [],
+  "confidence": 0.93,
+  "replications": 1,
+  "reuses": 1,
+  "conditions": [
+    "optimizar",
+    "cache",
+    "dependencias",
+    "evitar"
+  ],
+  "metrics_improvement": {},
+  "created_at": "2026-09-22"
+}

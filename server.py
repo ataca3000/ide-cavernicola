@@ -285,12 +285,13 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
         goal_id = f"goal_{uuid.uuid4().hex[:8]}"
         agent_goal = Goal(id=goal_id, description=prompt, priority=0.85)
 
-        # Brainstorm viable candidate actions
-        candidates = agent.brainstorm(agent_goal)
-        chosen_action = candidates[0] if candidates else "explorar_arquitectura_cognitiva"
+        # Brainstorm viable candidate actions via IDC (Causal Memory -> Curiosity -> LLM)
+        brainstorm_result = agent.brainstorm(agent_goal)
+        chosen_action = brainstorm_result.get("action") or "explorar_arquitectura_cognitiva"
+        action_hypo = brainstorm_result.get("hypothesis", "")
 
         # Run 1 real step through the full IDC pipeline
-        state = agent.run_step(agent_goal, candidate_action=chosen_action)
+        state = agent.run_step(agent_goal, candidate_action=chosen_action, hypothesis=action_hypo)
 
         # Generate curious hypothesis
         hypothesis = curiosity_engine.suggest_experiments(prompt, failed_actions=[])
@@ -310,13 +311,13 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
             },
             "timeline": [
                 {"step": 1, "action": "goal_ingested", "detail": f"Filtro de Propósito validando objetivo: '{prompt}'"},
-                {"step": 2, "action": "brainstorming", "detail": f"Brainstorming filtró {len(candidates)} acciones contra Causal Trash"},
+                {"step": 2, "action": "brainstorming", "detail": f"Brainstorming evaluó: '{chosen_action}' filtrando contra Causal Trash"},
                 {"step": 3, "action": "causal_simulation", "detail": "Proyectando consecuencias con reglas bayesianas en idc.db"},
                 {"step": 4, "action": "step_execution", "detail": f"Acción ejecutada: '{chosen_action}' (Incertidumbre: {state.uncertainty:.2f})"},
             ],
             "raw_output": {
                 "state": state.model_dump() if hasattr(state, "model_dump") else state.__dict__,
-                "candidates": candidates,
+                "brainstorm": brainstorm_result,
                 "suggested_experiments": hypothesis[:3],
             }
         }
