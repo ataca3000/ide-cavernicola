@@ -90,16 +90,19 @@ class RepoAnalyzer:
 
     def scan_technical_debt(self) -> List[Dict[str, Any]]:
         """
-        Scans code for markers like TODO, FIXME, HACK, BUG to quantify technical debt.
+        Scans code for markers like TODO, FIXME, HACK, BUG to quantify technical debt across all major languages.
         """
         debt_items = []
-        pattern = re.compile(r"\b(TODO|FIXME|HACK|BUG|OPTIMIZE)\b[:\s-]*(.*)", re.IGNORECASE)
-        ignore_dirs = {".venv", "venv", "env", "__pycache__", ".git", "build", "dist"}
+        pattern = re.compile(r"\b(TODO|FIXME|HACK|BUG|OPTIMIZE|DEPRECATED)\b[:\s-]*(.*)", re.IGNORECASE)
+        ignore_dirs = {".venv", "venv", "env", "__pycache__", ".git", "build", "dist", "node_modules", ".next"}
 
         for file_path in self.repo_root.rglob("*.*"):
             if any(ignored in file_path.parts for ignored in ignore_dirs):
                 continue
-            if file_path.suffix not in {".py", ".md", ".yml", ".yaml", ".toml", ".json"}:
+            if file_path.suffix not in {
+                ".py", ".ts", ".tsx", ".js", ".jsx", ".md", ".yml", ".yaml", 
+                ".toml", ".json", ".go", ".rs", ".java", ".cpp", ".c", ".h"
+            }:
                 continue
 
             rel_path = str(file_path.relative_to(self.repo_root)).replace("\\", "/")
@@ -120,6 +123,38 @@ class RepoAnalyzer:
                 continue
 
         return debt_items
+
+    def scan_all_source_files(self) -> Dict[str, Any]:
+        """
+        Scans all source code files across languages to quantify repository footprint.
+        """
+        ext_counts: Dict[str, int] = {}
+        total_loc = 0
+        total_files = 0
+        ignore_dirs = {".venv", "venv", "env", "__pycache__", ".git", "build", "dist", "node_modules", ".next"}
+        valid_exts = {
+            ".py", ".ts", ".tsx", ".js", ".jsx", ".go", ".rs", ".java", 
+            ".cpp", ".c", ".h", ".json", ".yml", ".yaml", ".toml", ".css", ".html"
+        }
+
+        for file_path in self.repo_root.rglob("*.*"):
+            if any(ignored in file_path.parts for ignored in ignore_dirs):
+                continue
+            ext = file_path.suffix.lower()
+            if ext in valid_exts:
+                total_files += 1
+                ext_counts[ext] = ext_counts.get(ext, 0) + 1
+                try:
+                    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                        total_loc += sum(1 for _ in f)
+                except Exception:
+                    pass
+
+        return {
+            "total_files": total_files,
+            "total_loc": total_loc,
+            "extension_distribution": ext_counts,
+        }
 
     def scan_ci_workflows(self) -> List[Dict[str, Any]]:
         """
@@ -155,22 +190,27 @@ class RepoAnalyzer:
 
     def generate_repository_summary(self) -> Dict[str, Any]:
         """
-        Constructs a complete semantic overview of the codebase.
+        Constructs a complete semantic overview of the codebase across all languages.
         """
         ast_data = self.scan_ast()
         debt_data = self.scan_technical_debt()
         ci_data = self.scan_ci_workflows()
+        source_data = self.scan_all_source_files()
 
-        total_loc = sum(m["lines_of_code"] for m in ast_data["modules"].values())
+        py_loc = sum(m["lines_of_code"] for m in ast_data["modules"].values())
+        total_loc = max(source_data["total_loc"], py_loc)
 
         return {
             "repository_root": str(self.repo_root),
+            "repository_name": self.repo_root.name or "Repo Objetivo",
             "metrics": {
+                "total_source_files": source_data["total_files"] or ast_data["total_python_files"],
                 "total_python_files": ast_data["total_python_files"],
                 "total_lines_of_code": total_loc,
                 "total_classes": len(ast_data["classes"]),
                 "technical_debt_items": len(debt_data),
                 "ci_workflows_count": len(ci_data),
+                "extension_distribution": source_data["extension_distribution"],
             },
             "classes": ast_data["classes"],
             "dependency_graph": ast_data["dependency_graph"],
