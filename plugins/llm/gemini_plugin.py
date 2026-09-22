@@ -29,7 +29,23 @@ class GeminiPlugin(BaseLLMPlugin):
         model: str = "gemini-1.5-flash",
         timeout: float = 12.0,
     ):
-        self.api_key = api_key or os.environ.get("GEMINI_API_KEY", "").strip()
+        if not api_key:
+            api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+
+        if not api_key:
+            env_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
+            if os.path.exists(env_file):
+                try:
+                    with open(env_file, "r", encoding="utf-8") as f:
+                        for line in f:
+                            line = line.strip()
+                            if line.startswith("GEMINI_API_KEY="):
+                                api_key = line.split("=", 1)[1].strip().strip('"').strip("'")
+                                break
+                except Exception:
+                    pass
+
+        self.api_key = api_key or ""
         self.model = model
         self.timeout = timeout
         self.base_url = "https://generativelanguage.googleapis.com/v1beta/models"
