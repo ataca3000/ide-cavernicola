@@ -13,6 +13,7 @@ from .decision_engine import DecisionEngine
 from .reinforcement_engine import ReinforcementEngine
 from .metrics import Metrics
 from .agent import IDCAgent
+from .sandbox import RealSandbox
 
 __all__ = [
     "Identity",
@@ -26,4 +27,5 @@ __all__ = [
     "ReinforcementEngine",
     "Metrics",
     "IDCAgent",
+    "RealSandbox",
 ]

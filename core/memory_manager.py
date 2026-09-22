@@ -123,17 +123,27 @@ class MemoryManager:
         effect: str,
         confidence: float,
         replications: int = 1,
-        conditions: Optional[List[str]] = None
+        conditions: Optional[List[str]] = None,
+        goal: str = "",
+        successful_action: Optional[str] = None,
+        failed_actions_superseded: Optional[List[str]] = None,
+        metrics_improvement: Optional[Dict[str, Any]] = None,
+        reuses: int = 0,
     ) -> Dict[str, Any]:
-        """Saves a validated causal rule in memory/causal/."""
+        """Saves a validated causal rule with cumulative memory in memory/causal/."""
         rule = {
             "id": rule_id,
+            "goal": goal,
             "cause": cause,
             "effect": effect,
+            "successful_action": successful_action or cause,
+            "failed_actions_superseded": failed_actions_superseded or [],
             "confidence": round(confidence, 2),
             "replications": replications,
+            "reuses": reuses,
             "conditions": conditions or ["stable_environment"],
-            "created_at": time.strftime("%Y-%m-%d", time.gmtime())
+            "metrics_improvement": metrics_improvement or {},
+            "created_at": time.strftime("%Y-%m-%d", time.gmtime()),
         }
         file_path = self.causal_dir / f"{rule_id}.json"
         with open(file_path, "w", encoding="utf-8") as f:
@@ -200,14 +210,25 @@ class MemoryManager:
 
 
     # --- 4. Causal Trash ---
-    def record_rejected(self, hypothesis: str, reason: str, failures: int = 1) -> Dict[str, Any]:
-        """Stores a failed hypothesis to prevent repeating mistakes."""
+    def record_rejected(
+        self,
+        hypothesis: str,
+        reason: str,
+        failures: int = 1,
+        goal: str = "",
+        metrics: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Stores a failed hypothesis/action with metrics in Causal Trash."""
         slug = hypothesis.lower().replace(" ", "_")[:30]
         rejected = {
+            "id": f"trash_{slug}_{int(time.time())}",
+            "goal": goal,
+            "failed_action": hypothesis,
             "hypothesis": hypothesis,
             "failures": failures,
             "reason": reason,
-            "rejected_at": time.strftime("%Y-%m-%d", time.gmtime())
+            "metrics": metrics or {},
+            "rejected_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         }
         file_path = self.trash_dir / f"rejected_{slug}.json"
         with open(file_path, "w", encoding="utf-8") as f:
@@ -217,12 +238,15 @@ class MemoryManager:
     add_to_trash = record_rejected
 
     def is_rejected(self, hypothesis_keyword: str) -> bool:
-        """Checks if a hypothesis has been rejected before."""
+        """Checks if a hypothesis or action has been rejected before."""
+        kw = hypothesis_keyword.lower().strip()
         for file in self.trash_dir.glob("*.json"):
             try:
                 with open(file, "r", encoding="utf-8") as f:
                     rej = json.load(f)
-                    if hypothesis_keyword.lower() in rej.get("hypothesis", "").lower():
+                    h = rej.get("hypothesis", "").lower().strip()
+                    fa = rej.get("failed_action", "").lower().strip()
+                    if (h and (kw in h or h in kw)) or (fa and (kw in fa or fa in kw)):
                         return True
             except Exception:
                 continue

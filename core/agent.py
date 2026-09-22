@@ -22,6 +22,7 @@ from core.memory_manager import MemoryManager
 from core.metrics import Metrics
 from core.purpose_filter import PurposeFilter
 from core.reinforcement_engine import ReinforcementEngine
+from core.sandbox import RealSandbox
 from core.simulation_engine import SimulationEngine
 from plugins.llm import BaseLLMPlugin, GeminiPlugin
 
@@ -37,6 +38,7 @@ class IDCAgent:
         memory_dir: Optional[str] = None,
         initial_energy: float = 100.0,
         llm_plugin: Optional[BaseLLMPlugin] = None,
+        sandbox: Optional[RealSandbox] = None,
     ):
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         id_path = identity_path or os.path.join(base_dir, "memory", "identity", "id.json")
@@ -51,6 +53,7 @@ class IDCAgent:
         self.simulation = SimulationEngine()
         self.reinforcement = ReinforcementEngine()
         self.llm = llm_plugin or GeminiPlugin()
+        self.sandbox = sandbox or RealSandbox()
 
         self.decision = DecisionEngine(
             purpose_filter=self.purpose,
@@ -62,6 +65,7 @@ class IDCAgent:
         self._active_rules: List[str] = []
         self._total_actions: int = 0
         self._aligned_actions: int = 0
+        self._failed_actions_history: Dict[str, List[str]] = {}
 
         self.state = AgentState(
             energy=self.energy.available(),
@@ -133,8 +137,26 @@ class IDCAgent:
         # 5. Execute Action (Deduct Energy)
         self.energy.consume(action_cost)
 
-        # Determine success from context or simulate verified execution
-        is_success = context.get("success", True)
+        # Determine success and metrics (either from RealSandbox or from context)
+        if context.get("use_sandbox"):
+            sandbox_res = self.sandbox.evaluate_strategy(
+                action=candidate_action,
+                baseline_s=context.get("baseline_s", 45.0),
+                is_known_bad=not context.get("success", True),
+            )
+            is_success = sandbox_res["success"]
+            action_cost = sandbox_res["energy_cost"]
+            metrics = {
+                "baseline_s": sandbox_res["baseline_s"],
+                "duration_s": sandbox_res["duration_s"],
+                "improvement_pct": sandbox_res["improvement_pct"],
+            }
+            reason = sandbox_res["reason"]
+        else:
+            is_success = context.get("success", True)
+            metrics = context.get("metrics", {})
+            reason = context.get("reason", f"Execution outcome under {goal.description}")
+
         result_str = "SUCCESS" if is_success else "FAILURE"
 
         # 6. Memory & Learning Consolidation
@@ -157,13 +179,19 @@ class IDCAgent:
 
         if is_success:
             rule_id = f"rule_{abs(hash(candidate_action)) % 10000:04d}"
+            superseded = list(self._failed_actions_history.get(goal.description, []))
             rule = CausalRule(
                 id=rule_id,
+                goal=goal.description,
                 cause=candidate_action,
                 effect=context.get("expected_effect", "goal_achieved"),
-                confidence=0.90,
+                successful_action=candidate_action,
+                failed_actions_superseded=superseded,
+                confidence=0.95,
                 replications=1,
+                reuses=1,
                 conditions=[goal.description],
+                metrics_improvement=metrics,
             )
             self.memory.save_causal_rule(
                 rule_id=rule.id,
@@ -172,15 +200,27 @@ class IDCAgent:
                 confidence=rule.confidence,
                 replications=rule.replications,
                 conditions=rule.conditions,
+                goal=rule.goal,
+                successful_action=rule.successful_action,
+                failed_actions_superseded=rule.failed_actions_superseded,
+                metrics_improvement=rule.metrics_improvement,
+                reuses=rule.reuses,
             )
             if rule_id not in self._active_rules:
                 self._active_rules.append(rule_id)
             goal.state = "completed"
         else:
+            if goal.description not in self._failed_actions_history:
+                self._failed_actions_history[goal.description] = []
+            if candidate_action not in self._failed_actions_history[goal.description]:
+                self._failed_actions_history[goal.description].append(candidate_action)
+
             # Register in Causal Trash to prevent repeating failure
             self.memory.record_rejected(
                 hypothesis=candidate_action,
-                reason=f"Execution failed under {goal.description}",
+                reason=reason,
+                goal=goal.description,
+                metrics=metrics,
             )
             goal.state = "failed"
 
