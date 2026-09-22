@@ -14,6 +14,7 @@ from .reinforcement_engine import ReinforcementEngine
 from .metrics import Metrics
 from .agent import IDCAgent
 from .sandbox import RealSandbox
+from .repo_analyzer import RepoAnalyzer
 
 __all__ = [
     "Identity",
@@ -28,4 +29,5 @@ __all__ = [
     "Metrics",
     "IDCAgent",
     "RealSandbox",
+    "RepoAnalyzer",
 ]
