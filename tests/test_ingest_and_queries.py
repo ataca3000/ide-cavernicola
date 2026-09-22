@@ -16,6 +16,21 @@ from scripts.store_failure import capture_failure
 
 
 class DummyLLM(BaseLLMPlugin):
+    def query(self, prompt: str, **kwargs) -> str:
+        return "dummy response"
+
+    def explain(self, context: str, decision: str) -> str:
+        return "dummy explanation"
+
+    def verify(self, rule_hypothesis: str, evidence: dict) -> bool:
+        return True
+
+    def simulate(self, action: str, current_state: dict) -> dict:
+        return {"result": "success"}
+
+    def extract_causal_rule(self, episode: dict) -> dict:
+        return {}
+
     def generate_hypothesis(self, goal, context=None, rejected_hypotheses=None):
         return {"action": "dummy_action", "hypothesis": "dummy_hypothesis"}
 
@@ -65,7 +80,7 @@ def test_sqlite_deduplication(tmp_path):
 def test_scan_technical_debt(tmp_path):
     sample_file = tmp_path / "sample.py"
     sample_file.write_text(
-        "# TODO: implement feature\n# FIXME: critical bug\n# HACK: temporary workaround\n",
+        "# TODO: implement feature\n# FIXME: critical issue\n# HACK: temporary workaround\n",
         encoding="utf-8",
     )
     test_db = tmp_path / "test_debt.db"
@@ -112,14 +127,12 @@ def test_idc_analytics_queries(tmp_path):
 
 
 def test_capture_failure_hook(tmp_path):
-    with patch("core.memory_manager.Path") as mock_path:
-        capture_failure(
-            goal="unit_test_goal",
-            action="pytest tests/broken_test.py",
-            error="AssertionError: 1 != 2",
-            reason="Test failed",
-        )
-    # Check trash entry in actual memory manager
+    capture_failure(
+        goal="unit_test_goal",
+        action="pytest tests/broken_test.py",
+        error="AssertionError: 1 != 2",
+        reason="Test failed",
+    )
     mem = MemoryManager()
     assert mem.is_rejected("pytest tests/broken_test.py")
 

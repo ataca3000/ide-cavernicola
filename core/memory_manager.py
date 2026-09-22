@@ -267,7 +267,8 @@ class MemoryManager:
         metrics: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Stores a failed hypothesis/action with metrics in Causal Trash."""
-        slug = hypothesis.lower().replace(" ", "_")[:30]
+        import re
+        slug = re.sub(r"[^a-zA-Z0-9_]", "_", hypothesis.lower().strip())[:30]
         rejected = {
             "id": f"trash_{slug}_{int(time.time())}",
             "goal": goal,
