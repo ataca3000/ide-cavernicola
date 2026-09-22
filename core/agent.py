@@ -226,12 +226,38 @@ class IDCAgent:
 
         return self._sync_state()
 
-    def brainstorm(self, goal: Goal, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def brainstorm(
+        self,
+        goal: Goal,
+        context: Optional[Dict[str, Any]] = None,
+        force_llm: bool = False,
+    ) -> Dict[str, Any]:
         """
-        Uses the connected LLM plugin (Gemini/Ollama) to brainstorm a candidate hypothesis,
-        automatically enforcing Causal Trash negative constraints.
+        Synthesizes or retrieves an action hypothesis for the given goal.
+        Follows IDC's Core Principle:
+          1. CAUSAL MEMORY FIRST: If a proven empirical rule exists (confidence >= 0.7),
+             return it directly. Zero tokens, zero LLM calls, zero hallucinations.
+          2. LLM BRAINSTORMING SECOND: If novel, query Gemini/Ollama with Causal Trash constraints.
         """
         context = context or {}
+
+        # 1. Causal Memory Short-Circuit (Zero Token Retrieval)
+        if not force_llm:
+            proven_rule = self.memory.find_proven_rule_for_goal(goal.description)
+            if proven_rule:
+                action = proven_rule.get("successful_action") or proven_rule.get("cause")
+                rule_id = proven_rule.get("id", "causal_rule")
+                return {
+                    "action": action,
+                    "hypothesis": f"Reusing verified causal rule '{rule_id}': {proven_rule.get('cause')}",
+                    "from_causal_memory": True,
+                    "rule_id": rule_id,
+                    "confidence": proven_rule.get("confidence", 0.95),
+                    "tokens_saved": True,
+                    "rejected_hypotheses": [],
+                }
+
+        # 2. LLM Brainstorming with Causal Trash negative constraints
         rejected = []
         for file in self.memory.trash_dir.glob("*.json"):
             try:
@@ -243,11 +269,14 @@ class IDCAgent:
             except Exception:
                 continue
 
-        return self.llm.generate_hypothesis(
+        res = self.llm.generate_hypothesis(
             goal=goal.description,
             context=context,
             rejected_hypotheses=rejected,
         )
+        res["from_causal_memory"] = False
+        res["tokens_saved"] = False
+        return res
 
     def get_metrics(self) -> MetricsModel:
         """Computes and returns the formal IDC cognitive metrics vector."""

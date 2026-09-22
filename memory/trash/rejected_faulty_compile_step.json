@@ -1,0 +1,13 @@
+{
+  "id": "trash_faulty_compile_step_1790066761",
+  "goal": "ci_pipeline",
+  "failed_action": "faulty_compile_step",
+  "hypothesis": "faulty_compile_step",
+  "failures": 1,
+  "reason": "CI test or execution step failed: ModuleNotFoundError: no module named missing_dep",
+  "metrics": {
+    "ci_status": "failed",
+    "error_snippet": "ModuleNotFoundError: no module named missing_dep"
+  },
+  "rejected_at": "2026-09-22T08:46:01Z"
+}

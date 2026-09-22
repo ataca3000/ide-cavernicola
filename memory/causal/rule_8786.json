@@ -1,0 +1,20 @@
+{
+  "id": "rule_8786",
+  "goal": "Optimizar tiempo de ejecucion en GitHub Actions evitando reinstalaciones innecesarias",
+  "cause": "Configure caching for pip/poetry dependencies in .github/workflows/ci.yml",
+  "effect": "execution_speedup",
+  "successful_action": "Configure caching for pip/poetry dependencies in .github/workflows/ci.yml",
+  "failed_actions_superseded": [],
+  "confidence": 0.95,
+  "replications": 1,
+  "reuses": 1,
+  "conditions": [
+    "Optimizar tiempo de ejecucion en GitHub Actions evitando reinstalaciones innecesarias"
+  ],
+  "metrics_improvement": {
+    "baseline_s": 40.0,
+    "duration_s": 12.8,
+    "improvement_pct": 68.0
+  },
+  "created_at": "2026-09-22"
+}

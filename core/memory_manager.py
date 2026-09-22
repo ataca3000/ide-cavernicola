@@ -178,6 +178,54 @@ class MemoryManager:
                 continue
         return matches
 
+    def find_proven_rule_for_goal(self, goal_description: str, min_confidence: float = 0.7) -> Optional[Dict[str, Any]]:
+        """
+        Searches causal memory for an existing rule that solves or matches the goal.
+        Returns the highest-confidence matching rule, or None if novelty/exploration is required.
+        """
+        if not self.causal_dir.exists():
+            return None
+
+        import re
+        query_tokens = set(re.findall(r"\w+", goal_description.lower()))
+        # Filter out common stop words to keep semantic signal
+        stop_words = {"de", "la", "el", "en", "y", "a", "los", "las", "un", "una", "para", "por", "con", "del", "al", "the", "in", "and", "to", "for", "with", "of"}
+        meaningful_query_tokens = query_tokens - stop_words
+        if not meaningful_query_tokens:
+            meaningful_query_tokens = query_tokens
+
+        best_rule = None
+        best_score = 0.0
+
+        for file in self.causal_dir.glob("*.json"):
+            try:
+                with open(file, "r", encoding="utf-8") as f:
+                    rule = json.load(f)
+
+                conf = rule.get("confidence", 0.0)
+                if conf < min_confidence:
+                    continue
+
+                rule_goal = rule.get("goal", "").lower()
+                rule_cause = rule.get("cause", "").lower()
+                conditions = " ".join(rule.get("conditions", [])).lower()
+                text_pool = f"{rule_goal} {rule_cause} {conditions}"
+                pool_tokens = set(re.findall(r"\w+", text_pool))
+
+                intersection = meaningful_query_tokens.intersection(pool_tokens)
+                if intersection:
+                    score = (len(intersection) / len(meaningful_query_tokens)) * conf
+                    if score > best_score:
+                        best_score = score
+                        best_rule = rule
+            except Exception:
+                continue
+
+        # If substantial semantic overlap is detected, return proven rule
+        if best_score >= 0.35 and best_rule:
+            return best_rule
+        return None
+
     def reinforce_rule(self, rule_id: str, verified: bool) -> Optional[Dict[str, Any]]:
         """Increments replication count and reinforces confidence."""
         target_file = self.causal_dir / f"{rule_id}.json"

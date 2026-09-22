@@ -10,6 +10,11 @@ import os
 import sys
 from pathlib import Path
 
+# Ensure project root is on sys.path
+_PROJECT_ROOT = str(Path(__file__).parent.parent)
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
 # Ensure UTF-8 output on Windows consoles
 if sys.stdout.encoding != "utf-8":
     try:
@@ -156,10 +161,19 @@ def cmd_think(args):
         priority=args.priority,
     )
 
-    print("\n[PASO 1] Brainstorming y evaluacion contra Causal Trash...")
-    brainstorm_res = agent.brainstorm(goal)
+    print("\n[PASO 1] Evaluacion de Hipotesis (Causal Memory vs LLM)...")
+    force_llm = getattr(args, "force_llm", False)
+    brainstorm_res = agent.brainstorm(goal, force_llm=force_llm)
     action = brainstorm_res.get("action", "optimize_pipeline")
     hyp = brainstorm_res.get("hypothesis", "N/A")
+
+    if brainstorm_res.get("from_causal_memory"):
+        print("  ⚡ [CORTOCIRCUITO COGNITIVO]: Regla existente encontrada en Memoria Causal!")
+        print("  ⚡ TOKENS CONSUMIDOS: 0 (No se requirio consultar al LLM)")
+        print(f"  * Regla Causal Reutilizada: '{brainstorm_res.get('rule_id')}'")
+    else:
+        print("  💡 [CREATIVIDAD LLM]: Problema no visto previamente. Generando hipotesis con LLM...")
+
     print(f"  * Accion Propuesta: '{action}'")
     print(f"  * Hipotesis Causal: {hyp}")
 
@@ -192,6 +206,20 @@ def cmd_think(args):
         print(f"   Confianza: {rule.get('confidence')}")
 
 
+def cmd_ingest(args):
+    """Executes episodic ingestion into SQLite."""
+    from scripts.idc_ingest import run_ingest
+    run_ingest()
+
+
+def cmd_metrics(args):
+    """Executes cognitive architectural queries over SQLite."""
+    from scripts.idc_queries import IDCAnalytics, print_analytics_report
+    analytics = IDCAnalytics()
+    print_analytics_report(analytics)
+    analytics.close()
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="idc",
@@ -202,6 +230,12 @@ def main():
     # scan
     scan_parser = subparsers.add_parser("scan", help="Escanear repositorio mediante AST, CI y deuda tecnica")
     scan_parser.add_argument("--path", default=None, help="Ruta del repositorio a escanear")
+
+    # ingest
+    subparsers.add_parser("ingest", help="Poblar base de datos de memoria episodica SQLite (con deduplicacion)")
+
+    # metrics / analytics
+    subparsers.add_parser("metrics", help="Consultas analiticas de arquitectura y deuda tecnica sobre SQLite")
 
     # rules
     subparsers.add_parser("rules", help="Listar reglas causales aprendidas")
@@ -217,6 +251,7 @@ def main():
     think_parser.add_argument("--energy", type=float, default=100.0, help="Energia inicial del agente")
     think_parser.add_argument("--priority", type=float, default=0.85, help="Prioridad del objetivo (0.0 a 1.0)")
     think_parser.add_argument("--simulate-failure", action="store_true", help="Simular fallo para probar Causal Trash")
+    think_parser.add_argument("--force-llm", action="store_true", help="Forzar consulta al LLM ignorando reglas causales previas")
 
     args = parser.parse_args()
 
@@ -224,6 +259,10 @@ def main():
 
     if args.command == "scan":
         cmd_scan(args)
+    elif args.command == "ingest":
+        cmd_ingest(args)
+    elif args.command == "metrics":
+        cmd_metrics(args)
     elif args.command == "rules":
         cmd_rules(args)
     elif args.command == "trash":
