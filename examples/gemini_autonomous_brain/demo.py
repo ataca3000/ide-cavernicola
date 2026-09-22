@@ -64,12 +64,14 @@ def run_gemini_brain_demo():
         candidate_action=new_hyp["action"],
         context={
             "success": True,
-            "expected_effect": "latency_reduced_by_60pct",
-            "estimated_cost": new_hyp["estimated_cost"],
+            "success": True,
+            "expected_effect": new_hyp.get("expected_effect", "latency_reduced_by_60pct"),
+            "estimated_cost": new_hyp.get("estimated_cost", 2.0),
         },
     )
     print(f"   -> Resultado: EXITO verificado! Estado del objetivo: {goal.state}")
-    print(f"   -> Regla causal aprendida y consolidada en memoria: {state.active_rules[-1]}")
+    if state.active_rules:
+        print(f"   -> Regla causal aprendida y consolidada en memoria: {state.active_rules[-1]}")
 
     # 7. Final Cognitive Telemetry
     metrics = agent.get_metrics()

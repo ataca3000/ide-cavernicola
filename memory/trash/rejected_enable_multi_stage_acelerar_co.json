@@ -1,6 +1,0 @@
-{
-  "hypothesis": "enable_multi_stage_acelerar_compilacion",
-  "failures": 1,
-  "reason": "Execution failed under Acelerar compilacion de contenedores y entrenamiento de IA",
-  "rejected_at": "2026-09-22"
-}
