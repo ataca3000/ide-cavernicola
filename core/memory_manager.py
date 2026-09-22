@@ -300,3 +300,61 @@ class MemoryManager:
             except Exception:
                 continue
         return False
+
+    # --- 5. Systemic Trauma & Identity Failures (Recalled ONLY On-Demand) ---
+    def record_systemic_trauma(
+        self,
+        trauma_id: str,
+        trigger_goal: str,
+        environment_verdict: str,
+        fatal_actions: List[str],
+        reason: str,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Stores an existential or hardware lockdown trauma in memory/identity/.
+        """
+        trauma_file = self.identity_dir / "systemic_traumas.json"
+        existing = []
+        if trauma_file.exists():
+            try:
+                with open(trauma_file, "r", encoding="utf-8") as f:
+                    existing = json.load(f)
+            except Exception:
+                existing = []
+
+        record = {
+            "trauma_id": trauma_id,
+            "trigger_goal": trigger_goal,
+            "environment_verdict": environment_verdict,
+            "fatal_actions": fatal_actions,
+            "reason": reason,
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "metadata": metadata or {},
+        }
+        existing.append(record)
+        with open(trauma_file, "w", encoding="utf-8") as f:
+            json.dump(existing, f, indent=2, ensure_ascii=False)
+        return record
+
+    def recall_systemic_traumas(self, on_demand: bool = False) -> List[Dict[str, Any]]:
+        """
+        Recalls existential traumas and hardware lockdown history.
+        CRITICAL IDC PRINCIPLE ("Dejar de temer a la muerte"):
+        By default (on_demand=False), returns empty list [].
+        The agent operates fearlessly with bold creative innovation.
+        Only when explicitly asked (on_demand=True) does it recall past collapses.
+        """
+        if not on_demand:
+            return []
+
+        trauma_file = self.identity_dir / "systemic_traumas.json"
+        if not trauma_file.exists():
+            return []
+
+        try:
+            with open(trauma_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return []
+

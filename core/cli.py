@@ -163,7 +163,14 @@ def cmd_think(args):
 
     print("\n[PASO 1] Evaluacion de Hipotesis (Causal Memory vs LLM)...")
     force_llm = getattr(args, "force_llm", False)
-    brainstorm_res = agent.brainstorm(goal, force_llm=force_llm)
+    recall_trauma = getattr(args, "recall_trauma", False)
+
+    if recall_trauma:
+        print("  ⚠️  [TRAUMA RECALL ACTIVO]: Recuperando memoria de colapsos sistemicos y bloqueos de hardware...")
+    else:
+        print("  🦅 [AUDACIA COGNITIVA]: Sin miedo a la muerte (Trauma dormido por defecto).")
+
+    brainstorm_res = agent.brainstorm(goal, force_llm=force_llm, recall_trauma=recall_trauma)
     action = brainstorm_res.get("action", "optimize_pipeline")
     hyp = brainstorm_res.get("hypothesis", "N/A")
 
@@ -252,6 +259,7 @@ def main():
     think_parser.add_argument("--priority", type=float, default=0.85, help="Prioridad del objetivo (0.0 a 1.0)")
     think_parser.add_argument("--simulate-failure", action="store_true", help="Simular fallo para probar Causal Trash")
     think_parser.add_argument("--force-llm", action="store_true", help="Forzar consulta al LLM ignorando reglas causales previas")
+    think_parser.add_argument("--recall-trauma", action="store_true", help="Recordar traumas y colapsos pasados (por defecto dormidos para no temer a la muerte)")
 
     args = parser.parse_args()
 

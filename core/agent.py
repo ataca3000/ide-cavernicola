@@ -39,6 +39,7 @@ class IDCAgent:
         initial_energy: float = 100.0,
         llm_plugin: Optional[BaseLLMPlugin] = None,
         sandbox: Optional[RealSandbox] = None,
+        recall_trauma: bool = False,
     ):
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         id_path = identity_path or os.path.join(base_dir, "memory", "identity", "id.json")
@@ -54,6 +55,7 @@ class IDCAgent:
         self.reinforcement = ReinforcementEngine()
         self.llm = llm_plugin or GeminiPlugin()
         self.sandbox = sandbox or RealSandbox()
+        self.recall_trauma = recall_trauma
 
         self.decision = DecisionEngine(
             purpose_filter=self.purpose,
@@ -66,6 +68,7 @@ class IDCAgent:
         self._total_actions: int = 0
         self._aligned_actions: int = 0
         self._failed_actions_history: Dict[str, List[str]] = {}
+        self._last_rl_feedback: Optional[Dict[str, Any]] = None
 
         self.state = AgentState(
             energy=self.energy.available(),
@@ -134,8 +137,9 @@ class IDCAgent:
             )
             return self._sync_state()
 
-        # 5. Execute Action (Deduct Energy)
-        self.energy.consume(action_cost)
+        # 5. Execute Action (Deduct Energy with Mode Stress)
+        complexity = context.get("complexity", 1.0)
+        consumed = self.energy.consume_action(action_cost, complexity=complexity)
 
         # Determine success and metrics (either from RealSandbox or from context)
         if context.get("use_sandbox"):
@@ -224,6 +228,22 @@ class IDCAgent:
             )
             goal.state = "failed"
 
+        # 7. Reinforcement Learning Evaluation & Adaptive Feedback
+        innovation_index = Metrics.innovation_index(
+            unique_actions_explored=self._total_actions,
+            rejected_constraints=len(self._failed_actions_history.get(goal.description, [])),
+        )
+        self._last_rl_feedback = self.reinforcement.evaluate_learning(
+            action=candidate_action,
+            result=result_str,
+            energy_used=consumed,
+            purpose_alignment=self._aligned_actions / max(1, self._total_actions),
+            replications=1,
+            mode=self.energy.mode(),
+            complexity=complexity,
+            innovation_index=innovation_index,
+        )
+
         return self._sync_state()
 
     def brainstorm(
@@ -231,6 +251,7 @@ class IDCAgent:
         goal: Goal,
         context: Optional[Dict[str, Any]] = None,
         force_llm: bool = False,
+        recall_trauma: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """
         Synthesizes or retrieves an action hypothesis for the given goal.
@@ -238,8 +259,11 @@ class IDCAgent:
           1. CAUSAL MEMORY FIRST: If a proven empirical rule exists (confidence >= 0.7),
              return it directly. Zero tokens, zero LLM calls, zero hallucinations.
           2. LLM BRAINSTORMING SECOND: If novel, query Gemini/Ollama with Causal Trash constraints.
+          3. ON-DEMAND TRAUMA RECALL ("Dejar de temer a la muerte"):
+             By default, systemic existential trauma is dormant. Only recalled on explicit demand.
         """
         context = context or {}
+        should_recall_trauma = self.recall_trauma if recall_trauma is None else recall_trauma
 
         # 1. Causal Memory Short-Circuit (Zero Token Retrieval)
         if not force_llm:
@@ -269,6 +293,14 @@ class IDCAgent:
             except Exception:
                 continue
 
+        # 3. On-Demand Recall of Systemic Traumas ("Dejar de temer a la muerte")
+        if should_recall_trauma:
+            traumas = self.memory.recall_systemic_traumas(on_demand=True)
+            for t in traumas:
+                for fatal in t.get("fatal_actions", []):
+                    if fatal not in rejected:
+                        rejected.append(fatal)
+
         res = self.llm.generate_hypothesis(
             goal=goal.description,
             context=context,
@@ -285,19 +317,21 @@ class IDCAgent:
         rules_count = len(self._active_rules)
         energy_spent = max(1.0, 100.0 - self.energy.available())
         efficiency = Metrics.learning_efficiency(rules_count, energy_spent)
+        total_failed_constraints = sum(len(v) for v in self._failed_actions_history.values())
+        innov_index = Metrics.innovation_index(self._total_actions, total_failed_constraints)
 
         return MetricsModel(
             curiosity_index=0.75,
             replication_index=float(rules_count),
             adaptation_index=Metrics.adaptation_index(0.8, 2),
-            innovation_index=0.6,
+            innovation_index=innov_index,
             purpose_alignment=round(alignment, 2),
             learning_efficiency=round(efficiency, 2),
         )
 
     def recharge(self, amount: float = 100.0) -> None:
         """Restores agent energy reserves."""
-        self.energy.energy = min(100.0, self.energy.energy + amount)
+        self.energy.recharge(amount)
         self.state.energy = self.energy.available()
 
     def _sync_state(self) -> AgentState:
