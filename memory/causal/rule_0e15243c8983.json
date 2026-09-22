@@ -1,0 +1,17 @@
+{
+  "id": "rule_0e15243c8983",
+  "goal": "Optimizar dependencias CI",
+  "cause": "enable_cache_caching",
+  "effect": "goal_achieved",
+  "successful_action": "enable_cache_caching",
+  "failed_actions_superseded": [],
+  "confidence": 0.93,
+  "replications": 1,
+  "reuses": 1,
+  "conditions": [
+    "optimizar",
+    "dependencias"
+  ],
+  "metrics_improvement": {},
+  "created_at": "2026-09-22"
+}
