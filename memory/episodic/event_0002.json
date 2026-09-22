@@ -1,9 +1,9 @@
 {
   "id": "event_0002",
-  "timestamp": "2026-09-22T06:57:54Z",
+  "timestamp": "2026-09-22T07:27:37Z",
   "goal": "Acelerar compilacion de contenedores y entrenamiento de IA",
-  "action": "enable_docker_layer_caching_registry",
+  "action": "configure_docker_layer_caching_registry",
   "result": "SUCCESS",
-  "energy_cost": 2.0,
+  "energy_cost": 1.5,
   "confidence": 0.95
 }

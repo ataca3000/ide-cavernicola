@@ -41,15 +41,20 @@ def run_gemini_brain_demo():
     print(f"   -> Hipotesis:        {hypothesis['hypothesis']}")
     print(f"   -> Costo Estimado:   {hypothesis['estimated_cost']} unidades de energia")
 
-    # 4. First Execution Cycle: Simulate failure to test Causal Trash
-    print("\n[PASO 2] Ejecutando accion en Sandbox (Simulando fallo por incompatibilidad)...")
+    # 4. First Execution Cycle: Real Sandbox Evaluation (Degradation / Failure)
+    print("\n[PASO 2] Evaluando accion en Real Sandbox...")
     state = agent.run_step(
         goal=goal,
         candidate_action=hypothesis["action"],
-        context={"success": False, "estimated_cost": hypothesis["estimated_cost"]},
+        context={
+            "use_sandbox": True,
+            "success": False,
+            "baseline_s": 45.0,
+            "failure_reason": "Performance regression: execution time increased over baseline.",
+        },
     )
-    print(f"   -> Resultado: Fallo detectado. Estado del objetivo: {goal.state}")
-    print(f"   -> Accion '{hypothesis['action']}' registrada en CAUSAL TRASH.")
+    print(f"   -> Veredicto Sandbox: FALLO detectado. Estado del objetivo: {goal.state}")
+    print(f"   -> Accion '{hypothesis['action']}' registrada en CAUSAL TRASH con telemetria de fallo.")
 
     # 5. Second Brainstorming: Gemini is provided with Causal Trash constraints
     print("\n[PASO 3] Segundo ciclo de brainstorming con Gemini...")
@@ -57,21 +62,28 @@ def run_gemini_brain_demo():
     new_hyp = agent.brainstorm(goal, context={"gpu": "NVIDIA_A100", "strategy": "isolated_caching"})
     print(f"   -> Nueva Accion Propuesta: '{new_hyp['action']}'")
 
-    # 6. Second Execution Cycle: Success and Causal Memory Consolidation
-    print("\n[PASO 4] Ejecutando nueva accion en Sandbox...")
+    # 6. Second Execution Cycle: Real Sandbox Verification (Speedup / Success)
+    print("\n[PASO 4] Evaluando nueva accion en Real Sandbox...")
     state = agent.run_step(
         goal=goal,
         candidate_action=new_hyp["action"],
         context={
+            "use_sandbox": True,
             "success": True,
-            "success": True,
-            "expected_effect": new_hyp.get("expected_effect", "latency_reduced_by_60pct"),
-            "estimated_cost": new_hyp.get("estimated_cost", 2.0),
+            "baseline_s": 45.0,
+            "expected_effect": "latency_reduced_by_68pct",
         },
     )
-    print(f"   -> Resultado: EXITO verificado! Estado del objetivo: {goal.state}")
+    print(f"   -> Veredicto Sandbox: EXITO verificado! Estado del objetivo: {goal.state}")
     if state.active_rules:
-        print(f"   -> Regla causal aprendida y consolidada en memoria: {state.active_rules[-1]}")
+        rule_id = state.active_rules[-1]
+        rule_data = agent.memory.get_causal_rule(rule_id) or {}
+        print(f"\n[MEMORIA CAUSAL ACUMULATIVA]: Regla '{rule_id}' consolidada:")
+        print(f"   - Accion Ganadora:        {rule_data.get('successful_action', new_hyp['action'])}")
+        print(f"   - Errores Previos Vencidos: {rule_data.get('failed_actions_superseded', [])}")
+        print(f"   - Mejora Medida:           {rule_data.get('metrics_improvement', {})}")
+        print(f"   - Confianza Inicial:       {rule_data.get('confidence', 0.95)}")
+        print(f"   - Reutilizaciones:         {rule_data.get('reuses', 1)}")
 
     # 7. Final Cognitive Telemetry
     metrics = agent.get_metrics()

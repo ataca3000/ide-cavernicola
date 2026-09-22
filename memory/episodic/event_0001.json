@@ -1,9 +1,9 @@
 {
   "id": "event_0001",
-  "timestamp": "2026-09-22T06:57:53Z",
+  "timestamp": "2026-09-22T07:27:36Z",
   "goal": "Acelerar compilacion de contenedores y entrenamiento de IA",
-  "action": "optimize_acelerar_compilacion",
+  "action": "enable_torch_compile_mode",
   "result": "FAILURE",
-  "energy_cost": 2.0,
+  "energy_cost": 4.0,
   "confidence": 0.1
 }
