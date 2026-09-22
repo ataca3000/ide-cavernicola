@@ -128,6 +128,23 @@ class MemoryManager:
         self._trash_index.clear()
         self._trash_index_loaded = False
 
+    def list_causal_rules(self) -> List[Dict[str, Any]]:
+        """
+        Returns all causal rules as a list (cache-backed).
+        Preferred over glob-scanning the causal dir.
+        """
+        self._load_rule_cache()
+        return list(self._rule_cache.values())
+
+    def get_rejected_list(self) -> List[str]:
+        """
+        Returns the normalized list of rejected hypotheses/actions.
+        Used by brainstorm() to inject negative constraints into the LLM prompt
+        without re-scanning the trash directory on every call.
+        """
+        self._load_trash_index()
+        return list(self._trash_index)
+
     # ── Generic Save ─────────────────────────────────────────────────────────
 
     def save_event(self, event: Dict[str, Any], path: str) -> None:

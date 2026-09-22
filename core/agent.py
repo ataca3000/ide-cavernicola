@@ -187,21 +187,33 @@ class IDCAgent:
         )
 
         if is_success:
-            # TD-006 FIX: uuid4 hex guarantees global uniqueness — no hash
-            # collisions, no PYTHONHASHSEED non-determinism, no overwrites.
+            # CausalEngine (Type-5 Consolidation): synthesize episode into
+            # a semantically-enriched causal rule instead of building it inline.
+            episode_data = {
+                "goal": goal.description,
+                "action": candidate_action,
+                "result": result_str,
+                "energy_cost": action_cost,
+                "confidence": 0.95,
+            }
+            extracted = self.causal.extract_from_episode(episode_data)
             rule_id = f"rule_{uuid.uuid4().hex[:12]}"
             superseded = list(self._failed_actions_history.get(goal.description, []))
             rule = CausalRule(
                 id=rule_id,
-                goal=goal.description,
-                cause=candidate_action,
-                effect=context.get("expected_effect", "goal_achieved"),
+                goal=extracted["goal"],
+                cause=extracted["cause"],
+                # Honor explicit expected_effect from context; fall back to
+                # CausalEngine's semantic inference from the episode.
+                effect=context.get("expected_effect", extracted["effect"]),
                 successful_action=candidate_action,
                 failed_actions_superseded=superseded,
-                confidence=0.95,
-                replications=1,
+                confidence=extracted["confidence"],
+                replications=extracted["replications"],
                 reuses=1,
-                conditions=[goal.description],
+                # Semantic conditions from CausalEngine (e.g. key terms from goal)
+                # instead of the raw goal string — richer for future inference.
+                conditions=extracted["conditions"],
                 metrics_improvement=metrics,
             )
             self.memory.save_causal_rule(
@@ -295,22 +307,45 @@ class IDCAgent:
                     "rejected_hypotheses": [],
                 }
 
-        # 2. LLM Brainstorming with Causal Trash negative constraints
-        rejected = []
-        for file in self.memory.trash_dir.glob("*.json"):
-            try:
-                import json
-                with open(file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    if "hypothesis" in data:
-                        rejected.append(data["hypothesis"])
-            except Exception:
-                continue
+        # 2. Build negative constraints from Causal Trash (cache-backed, zero I/O)
+        # Replaces the previous O(n) file-glob scan on every brainstorm() call.
+        rejected = self.memory.get_rejected_list()
 
-        # 3. Dual Trauma Trigger: On-Demand OR Autonomic Metabolic Stress Reflex
+        # 3. CuriosityEngine: local experiment suggestion (zero tokens, zero LLM).
+        # Sits between causal memory retrieval and LLM to give the agent a
+        # free creative layer: template-based semantic composition filtered by Trash.
+        if not force_llm:
+            known_rules = self.memory.list_causal_rules()
+            suggestions = self.curiosity.suggest_experiments(
+                goal=goal.description,
+                known_rules=known_rules,
+                failed_actions=rejected,
+                context=context,
+                max_suggestions=1,
+            )
+            if suggestions:
+                best = suggestions[0]
+                is_novel = self.curiosity.record_question(
+                    best["action"],
+                    goal=goal.description,
+                    score=best["score"],
+                )
+                if is_novel and best["score"] >= 0.35:
+                    return {
+                        "action": best["action"],
+                        "hypothesis": best["rationale"],
+                        "from_causal_memory": False,
+                        "from_curiosity_engine": True,
+                        "tokens_saved": True,
+                        "rejected_hypotheses": rejected,
+                        "curiosity_score": best["score"],
+                        "goal_token": best.get("goal_token", ""),
+                    }
+
+        # 4. Dual Trauma Trigger: On-Demand OR Autonomic Metabolic Stress Reflex.
         # By default, systemic trauma is dormant ("dejar de temer a la muerte").
-        # However, if metabolic stress exceeds critical threshold (stress_factor >= 2.2 or SURVIVAL mode),
-        # the agent automatically triggers an involuntary trauma flashback to preserve survival.
+        # However, if metabolic stress exceeds critical threshold (stress_factor >= 2.2
+        # or SURVIVAL mode), the agent involuntarily triggers a trauma flashback.
         stress_critical = (self.energy.stress_factor() >= 2.2) or (self.energy.mode() == "SURVIVAL")
         active_trauma_recall = should_recall_trauma or stress_critical
 
@@ -325,12 +360,15 @@ class IDCAgent:
                 if last_mutation and last_mutation not in rejected:
                     rejected.append(last_mutation)
 
+        # 5. LLM Brainstorming (most expensive path — only reached when memory
+        #    and CuriosityEngine both fail to produce a confident hypothesis).
         res = self.llm.generate_hypothesis(
             goal=goal.description,
             context=context,
             rejected_hypotheses=rejected,
         )
         res["from_causal_memory"] = False
+        res["from_curiosity_engine"] = False
         res["tokens_saved"] = False
         # Track LLM calls for real curiosity_index computation
         self._llm_brainstorm_count += 1
