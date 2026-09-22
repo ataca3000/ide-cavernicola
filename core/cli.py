@@ -140,9 +140,90 @@ def cmd_trash(args):
         print()
 
 
+def cmd_traumas(args):
+    """Visualizes systemic traumas, existential blackouts, and hardware lockdown scars."""
+    memory = MemoryManager()
+    traumas = memory.recall_systemic_traumas(on_demand=True)
+
+    print(f"\n[CICATRICES SISTEMICAS Y TRAUMAS DE HARDWARE] Total Registrados: {len(traumas)}")
+    print("=" * 75)
+    if not traumas:
+        print("  (No hay traumas sistemicos registrados. La identidad nunca ha colapsado.)")
+        return
+
+    for idx, t in enumerate(traumas, 1):
+        t_id = t.get("trauma_id", "desconocido")
+        ts = t.get("timestamp", "N/A")
+        goal = t.get("trigger_goal", "N/A")
+        verdict = t.get("environment_verdict", "FATAL")
+        stress = t.get("stress_factor", 3.0)
+        depleted = t.get("energy_depleted", 100.0)
+        chain = t.get("fatal_actions_chain", [])
+        last_mut = t.get("survival_mutation", "N/A")
+        reason = t.get("reason", "N/A")
+        hw = t.get("hardware_telemetry", {})
+
+        print(f"[{idx}] TRAUMA ID: {t_id}")
+        print(f"    Fecha (UTC):        {ts}")
+        print(f"    Objetivo Fatal:     {goal}")
+        print(f"    Veredicto Entorno:  {verdict}")
+        print(f"    Drenaje Energetico: {depleted:.1f}% | Factor de Estres: {stress:.2f}x")
+        print(f"    Razon de Colapso:   {reason}")
+        print(f"    Telemetria Fisica:  SO: {hw.get('os_name')} | Python: {hw.get('python_version')} | Cores: {hw.get('cpu_cores')}")
+        print(f"    Mutacion de Panico: '{last_mut}'")
+        print(f"    Cadena Fatal ({len(chain)} acciones):")
+        for step, act in enumerate(chain, 1):
+            print(f"       {step:2d}. {act}")
+        print("-" * 75)
+
+
+def cmd_telemetry(args):
+    """Displays real-time hardware telemetry and current metabolic cognitive status."""
+    import platform
+    memory = MemoryManager()
+    traumas = memory.recall_systemic_traumas(on_demand=True)
+    trash_count = len(list(memory.trash_dir.glob("*.json"))) if memory.trash_dir.exists() else 0
+    rules_count = len(list(memory.causal_dir.glob("*.json"))) if memory.causal_dir.exists() else 0
+
+    # Read SQLite event count if available
+    db_events = 0
+    db_path = memory.base_dir / "idc.db"
+    if db_path.exists():
+        import sqlite3
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT count(*) FROM episodic_events")
+            db_events = cursor.fetchone()[0]
+            conn.close()
+        except Exception:
+            pass
+
+    print("\n[TELEMETRIA CIBERFISICA & ESTADO METABOLICO]")
+    print("=" * 75)
+    print("1. HARDWARE ANFITRION:")
+    print(f"   * Sistema Operativo:    {platform.platform()}")
+    print(f"   * Arquitectura CPU:     {platform.machine()} ({platform.processor() or 'Generico'})")
+    print(f"   * Nucleos Logicos CPU:  {os.cpu_count() or 1}")
+    print(f"   * Version de Python:    {sys.version.split()[0]}")
+
+    print("\n2. ESTADO COGNITIVO & PERSISTENCIA IDC:")
+    print(f"   * Traumas Sistemicos:   {len(traumas)} colapsos grabados")
+    print(f"   * Causal Trash (Fallos): {trash_count} acciones prohibidas")
+    print(f"   * Reglas Causales:      {rules_count} reglas verificadas")
+    print(f"   * Eventos Episodicos:   {db_events} en memoria SQLite")
+
+    print("\n3. UMBRALES DE ESTRES METABOLICO (CURVA NO LINEAL):")
+    print("   * 100% - 20% Energia -> MODO EXPLORACION  | Estres: 1.00x | Trauma: Dormido (Audaz)")
+    print("   *  20% -  5% Energia -> MODO OPTIMIZACION | Estres: 1.25x - 2.20x | Trauma: Alerta")
+    print("   *   5% -  0% Energia -> MODO SURVIVAL     | Estres: 2.20x - 3.00x | Trauma: DESPIERTO (Flashback)")
+    print("=" * 75)
+
+
 def cmd_think(args):
     """Runs the cognitive loop with Gemini or Ollama for a given goal."""
     print(f"\n[OBJETIVO RECIBIDO]: '{args.goal}'")
+
 
     # Select LLM plugin
     if args.ollama:
@@ -250,6 +331,12 @@ def main():
     # trash
     subparsers.add_parser("trash", help="Listar acciones descartadas en Causal Trash")
 
+    # traumas
+    subparsers.add_parser("traumas", help="Visualizar cicatrices sistemicas y traumas de hardware grabados")
+
+    # telemetry
+    subparsers.add_parser("telemetry", help="Telemetria ciberfisica de hardware y estado metabolico del agente")
+
     # think / run
     think_parser = subparsers.add_parser("think", help="Ejecutar ciclo de resolucion causal de un objetivo")
     think_parser.add_argument("goal", help="Descripcion del objetivo a resolver")
@@ -275,10 +362,15 @@ def main():
         cmd_rules(args)
     elif args.command == "trash":
         cmd_trash(args)
+    elif args.command == "traumas":
+        cmd_traumas(args)
+    elif args.command == "telemetry":
+        cmd_telemetry(args)
     elif args.command == "think":
         cmd_think(args)
     else:
         parser.print_help()
+
 
 
 if __name__ == "__main__":

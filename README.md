@@ -759,7 +759,44 @@ Adaptive Optimization
 
 ---
 
+# IDC Unified CLI Reference
+
+IDC includes a production command-line interface (`idc`) for autonomous causal reasoning, metabolic monitoring, and repository metacognition:
+
+```bash
+# 1. Escaneo estatico de AST, CI/CD y deuda tecnica
+python -m core.cli scan
+
+# 2. Ingesta de memoria episodica SQLite con deduplicacion
+python -m core.cli ingest
+
+# 3. Analiticas de deuda tecnica, grafos y densidad de complejidad
+python -m core.cli metrics
+
+# 4. Inspeccionar reglas causales aprendidas (A -> B verificadas)
+python -m core.cli rules
+
+# 5. Inspeccionar Causal Trash (hipotesis y acciones fallidas descartadas)
+python -m core.cli trash
+
+# 6. Inspeccionar traumas existenciales y cicatrices de hardware ciberfisico
+python -m core.cli traumas
+
+# 7. Monitor de telemetria de hardware anfitrion y estres metabolico
+python -m core.cli telemetry
+
+# 8. Resolver un objetivo cognitivo (con atajo causal a 0 tokens o consulta LLM)
+python -m core.cli think "Acelerar compilacion de contenedores"
+# Opciones avanzadas:
+#   --force-llm       Fuerza consulta a LLM ignorando reglas previas
+#   --recall-trauma   Despierta traumas historicos (por defecto dormidos para innovar sin miedo)
+#   --ollama          Usa motor local Ollama en vez de Gemini Flash
+```
+
+---
+
 # Project Status
+
 
 ```text
 Status:

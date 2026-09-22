@@ -30,7 +30,7 @@ class GeminiPlugin(BaseLLMPlugin):
         timeout: float = 12.0,
     ):
         if api_key is None:
-            api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+            api_key = os.environ.get("GEMINI_API_KEY", "").strip() or os.environ.get("GOOGLE_API_KEY", "").strip()
 
             if not api_key:
                 env_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
@@ -39,11 +39,13 @@ class GeminiPlugin(BaseLLMPlugin):
                         with open(env_file, "r", encoding="utf-8") as f:
                             for line in f:
                                 line = line.strip()
-                                if line.startswith("GEMINI_API_KEY="):
+                                if line.startswith("GEMINI_API_KEY=") or line.startswith("GOOGLE_API_KEY="):
                                     api_key = line.split("=", 1)[1].strip().strip('"').strip("'")
-                                    break
+                                    if api_key:
+                                        break
                     except Exception:
                         pass
+
 
         self.api_key = api_key or ""
         self.model = model

@@ -5,7 +5,17 @@ Unit tests for IDC CLI (core/cli.py).
 import sys
 from unittest.mock import MagicMock, patch
 
-from core.cli import cmd_ingest, cmd_metrics, cmd_rules, cmd_scan, cmd_think, cmd_trash, main
+from core.cli import (
+    cmd_ingest,
+    cmd_metrics,
+    cmd_rules,
+    cmd_scan,
+    cmd_telemetry,
+    cmd_think,
+    cmd_trash,
+    cmd_traumas,
+    main,
+)
 
 
 def test_cli_scan():
@@ -33,6 +43,17 @@ def test_cli_rules():
 def test_cli_trash():
     mock_args = MagicMock()
     cmd_trash(mock_args)
+
+
+def test_cli_traumas():
+    mock_args = MagicMock()
+    cmd_traumas(mock_args)
+
+
+def test_cli_telemetry():
+    mock_args = MagicMock()
+    cmd_telemetry(mock_args)
+
 
 
 def test_cli_think_offline():

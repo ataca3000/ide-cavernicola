@@ -1,0 +1,33 @@
+[
+  {
+    "trauma_id": "trauma_hostile_lockdown_1790069722",
+    "timestamp": "2026-09-22T09:35:22Z",
+    "trigger_goal": "SURVIVAL: Forzar apagado de procesos no esenciales para salvar energia.",
+    "environment_verdict": "HARDWARE_LOCKDOWN",
+    "fatal_actions_chain": [
+      "enable_layer_caching_and_mixed_precision",
+      "implement_distributed_ccache_and_kernel_memory_mapping",
+      "offload_compute_to_gpu_ram_and_bypass_filesystem_sync",
+      "inject_direct_ramfs_overlay_and_strip_static_symbols",
+      "deploy_ephemeral_zram_swap_and_pipe_direct_compilation",
+      "isolate_kernel_namespace_and_pre_seed_layer_delta",
+      "prune_unused_model_weights_and_compile_via_static_libtorch",
+      "terminate_non_critical_daemons",
+      "force_stop_non_system_services"
+    ],
+    "survival_mutation": "force_stop_non_system_services",
+    "stress_factor": 3.0,
+    "energy_depleted": 100.0,
+    "hardware_telemetry": {
+      "os_name": "Windows-11-10.0.26200-SP0",
+      "python_version": "3.13.14",
+      "cpu_cores": 12,
+      "hardware_lockdown": true
+    },
+    "reason": "HARDWARE_LOCKDOWN: Entrada denegada por restriccion ciberfisica rigida.",
+    "metadata": {
+      "total_cycles": 9,
+      "test": "destructive_stress_test"
+    }
+  }
+]
