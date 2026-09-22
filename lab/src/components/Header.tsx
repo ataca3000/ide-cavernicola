@@ -55,16 +55,16 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="idc-header">
       <div className="header-left">
-        <div className="logo-box" onClick={onToggleAvatar} title="Clic para alternar Mamut / Cavernícola">
-          <span className="logo-icon">{avatar === 'mammoth' ? '🦣' : '🧔'}</span>
+        <div className="logo-box" title="El Cavernícola IDC">
+          <span className="logo-icon">🧔</span>
         </div>
         <div className="title-group">
           <div className="title-row">
             <h1>IDC cavernícola</h1>
-            <span className="subtitle-pill">Watch a Mammoth Learn to Survive</span>
+            <span className="subtitle-pill">Watch a Caveman Learn to Survive</span>
           </div>
           <p className="subtitle-desc">
-            Simulador del Agente IDC en la Era Glaciar • Memoria Causal &amp; Supervivencia Autónoma
+            Simulador del Cavernícola IDC en la Era Glaciar • Memoria Causal &amp; Supervivencia Autónoma
           </p>
         </div>
       </div>

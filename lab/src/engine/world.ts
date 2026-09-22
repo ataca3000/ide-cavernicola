@@ -28,8 +28,8 @@ export class World {
     this.stepCount = 0;
     this.dayCycle = 'day';
 
-    // 1. Agent starting position (Mammoth / Caveman at 5, 12)
-    this.addEntity({ id: 'agent_player', x: 5, y: 12, type: 'caveman', hp: 100, maxHp: 100, label: 'Mamut / Cavernícola' });
+    // 1. Agent starting position (Cavernícola at 5, 12)
+    this.addEntity({ id: 'agent_player', x: 5, y: 12, type: 'caveman', hp: 100, maxHp: 100, label: 'Cavernícola IDC' });
 
     // 2. Fire (sanctuary at 4, 4)
     this.addEntity({ id: 'fire_sanctuary', x: 4, y: 4, type: 'fire', label: 'Hoguera Sagrada' });

@@ -69,7 +69,15 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         content_length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
+        if content_length > 0:
+            raw_bytes = self.rfile.read(content_length)
+            try:
+                body = raw_bytes.decode("utf-8")
+            except UnicodeDecodeError:
+                body = raw_bytes.decode("latin-1", errors="replace")
+        else:
+            body = "{}"
+
         try:
             payload = json.loads(body) if body else {}
         except Exception:

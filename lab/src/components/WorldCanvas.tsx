@@ -22,9 +22,8 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({
   const getEntityIcon = (type: Entity['type']) => {
     switch (type) {
       case 'caveman':
-        return avatar === 'mammoth' ? '🦣' : '🧔';
       case 'mammoth':
-        return '🦣';
+        return '🧔';
       case 'wolf':
         return '🐺';
       case 'fire':
@@ -133,7 +132,7 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({
       </div>
 
       <div className="world-legend">
-        <span>{avatar === 'mammoth' ? '🦣 Mamut' : '🧔 Cavernícola'}</span>
+        <span>🧔 El Cavernícola (Agente IDC)</span>
         <span>🐺 Lobo (Peligro)</span>
         <span>🔥 Hoguera (Sanación)</span>
         <span>🍖 Alimento (+Energía)</span>

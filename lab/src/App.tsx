@@ -10,6 +10,7 @@ import { GoalController } from './components/GoalController';
 import { ConnectionModal } from './components/ConnectionModal';
 import { MissionHub } from './components/MissionHub';
 import { RealResultsViewer } from './components/RealResultsViewer';
+import { CognitiveChatBar } from './components/CognitiveChatBar';
 
 export const App: React.FC = () => {
   // Engines instances kept across renders
@@ -91,7 +92,7 @@ export const App: React.FC = () => {
   };
 
   const handleToggleAvatar = () => {
-    agent.avatar = agent.avatar === 'caveman' ? 'mammoth' : 'caveman';
+    agent.avatar = 'caveman';
     setTick((t) => t + 1);
   };
 
@@ -224,8 +225,8 @@ export const App: React.FC = () => {
           className={`tab-nav-btn ${activeTab === 'sim' ? 'active' : ''}`}
           onClick={() => setActiveTab('sim')}
         >
-          <span className="tab-icon">🦣</span>
-          <span>SIMULACIÓN DEL MAMUT / CAVERNÍCOLA</span>
+          <span className="tab-icon">🧔</span>
+          <span>SIMULACIÓN DEL CAVERNÍCOLA IDC</span>
         </button>
 
         <button
@@ -282,8 +283,16 @@ export const App: React.FC = () => {
               />
             </div>
 
-            {/* Right Column: Mental Telemetry & Dual Subpanels */}
+            {/* Right Column: Conversational Agent Chat, Mental Telemetry & Dual Subpanels */}
             <div className="cockpit-col cockpit-right">
+              <CognitiveChatBar
+                serverUrl={serverUrl}
+                serverStatus={serverStatus}
+                geminiKey={geminiKey}
+                onLaunchMission={(prompt) => handleExecuteMission('custom', prompt)}
+                onOpenSettings={() => setIsSettingsOpen(true)}
+              />
+
               <CognitiveTerminal
                 logs={agent.logs}
                 currentGoal={agent.goal.name}
@@ -365,7 +374,7 @@ export const App: React.FC = () => {
       {/* ── Footer Matching Reference Image ──────────────────── */}
       <footer className="idc-footer">
         <span className="footer-left">
-          IDC Cavernícola • <em>"Watch a Mammoth Learn to Survive"</em>
+          IDC Cavernícola • <em>"Cognición Causal y Evolución de Código"</em>
         </span>
         <span className="footer-right">
           Creado por <strong className="author-name">Luis Felipe Durán Salinas</strong> (ATACA3000 / Brecha Soluciones DS)
