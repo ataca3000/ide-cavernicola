@@ -26,7 +26,7 @@ class GeminiPlugin(BaseLLMPlugin):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = "gemini-1.5-flash",
+        model: str = "gemini-flash-latest",
         timeout: float = 12.0,
     ):
         if not api_key:
@@ -60,13 +60,13 @@ class GeminiPlugin(BaseLLMPlugin):
             return None
 
         url = f"{self.base_url}/{self.model}:generateContent?key={self.api_key}"
-        payload: Dict[str, Any] = {
-            "contents": [{"parts": [{"text": prompt}]}]
-        }
+        full_text = prompt
         if system_instruction:
-            payload["systemInstruction"] = {
-                "parts": [{"text": system_instruction}]
-            }
+            full_text = f"SYSTEM INSTRUCTION: {system_instruction}\n\nUSER REQUEST: {prompt}"
+
+        payload: Dict[str, Any] = {
+            "contents": [{"parts": [{"text": full_text}]}]
+        }
 
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(
@@ -83,9 +83,10 @@ class GeminiPlugin(BaseLLMPlugin):
                     candidates = res_body.get("candidates", [])
                     if candidates:
                         parts = candidates[0].get("content", {}).get("parts", [])
-                        if parts:
-                            return parts[0].get("text", "")
-        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, Exception):
+                        for p in parts:
+                            if "text" in p and p["text"]:
+                                return p["text"]
+        except Exception:
             return None
 
         return None

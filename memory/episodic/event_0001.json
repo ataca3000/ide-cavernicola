@@ -1,8 +1,8 @@
 {
   "id": "event_0001",
-  "timestamp": "2026-09-22T06:37:57Z",
+  "timestamp": "2026-09-22T06:46:44Z",
   "goal": "Acelerar compilacion de contenedores y entrenamiento de IA",
-  "action": "optimize_acelerar_compilacion",
+  "action": "enable_multi_stage_acelerar_compilacion",
   "result": "FAILURE",
   "energy_cost": 2.0,
   "confidence": 0.1

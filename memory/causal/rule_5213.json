@@ -1,0 +1,11 @@
+{
+  "id": "rule_5213",
+  "cause": "enable_multi_stage_acelerar_compilacion",
+  "effect": "latency_reduced_by_60pct",
+  "confidence": 0.9,
+  "replications": 1,
+  "conditions": [
+    "Acelerar compilacion de contenedores y entrenamiento de IA"
+  ],
+  "created_at": "2026-09-22"
+}
