@@ -1,0 +1,20 @@
+{
+  "id": "rule_0225",
+  "goal": "Optimizar pipelines CI/CD",
+  "cause": "analyze_pipeline_bottlenecks",
+  "effect": "execution_speedup",
+  "successful_action": "analyze_pipeline_bottlenecks",
+  "failed_actions_superseded": [],
+  "confidence": 0.95,
+  "replications": 1,
+  "reuses": 1,
+  "conditions": [
+    "Optimizar pipelines CI/CD"
+  ],
+  "metrics_improvement": {
+    "baseline_s": 40.0,
+    "duration_s": 12.8,
+    "improvement_pct": 68.0
+  },
+  "created_at": "2026-09-22"
+}

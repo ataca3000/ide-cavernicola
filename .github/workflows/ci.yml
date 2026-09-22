@@ -26,9 +26,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 4. Run Unit Tests (Core Foundation & Plugins)
+      - name: 4. Run Complete Unit Test Suite (Pytest)
         run: |
-          python tests/test_phase1.py
+          pytest tests/
 
       - name: 5. Execute Prototype 0001 (Cognitive Loop Validation)
         run: |
