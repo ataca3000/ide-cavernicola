@@ -5,7 +5,7 @@ Unit tests for IDC CLI (core/cli.py).
 import sys
 from unittest.mock import MagicMock, patch
 
-from core.cli import cmd_rules, cmd_scan, cmd_think, cmd_trash, main
+from core.cli import cmd_ingest, cmd_metrics, cmd_rules, cmd_scan, cmd_think, cmd_trash, main
 
 
 def test_cli_scan():
@@ -13,6 +13,16 @@ def test_cli_scan():
     mock_args.path = None
     # Should run without error
     cmd_scan(mock_args)
+
+
+def test_cli_ingest():
+    mock_args = MagicMock()
+    cmd_ingest(mock_args)
+
+
+def test_cli_metrics():
+    mock_args = MagicMock()
+    cmd_metrics(mock_args)
 
 
 def test_cli_rules():
