@@ -1,9 +1,9 @@
 {
   "id": "event_0001",
-  "timestamp": "2026-09-22T06:46:44Z",
+  "timestamp": "2026-09-22T06:50:13Z",
   "goal": "Acelerar compilacion de contenedores y entrenamiento de IA",
   "action": "enable_multi_stage_acelerar_compilacion",
-  "result": "FAILURE",
-  "energy_cost": 2.0,
-  "confidence": 0.1
+  "result": "REJECTED: Action rejected: matches known failure in Causal Trash.",
+  "energy_cost": 0.0,
+  "confidence": 0.0
 }
