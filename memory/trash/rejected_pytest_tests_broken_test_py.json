@@ -1,5 +1,5 @@
 {
-  "id": "trash_pytest_tests_broken_test_py_1790068220",
+  "id": "trash_pytest_tests_broken_test_py_1790071074",
   "goal": "unit_test_goal",
   "failed_action": "pytest tests/broken_test.py",
   "hypothesis": "pytest tests/broken_test.py",
@@ -9,5 +9,5 @@
     "ci_status": "failed",
     "error_snippet": "AssertionError: 1 != 2"
   },
-  "rejected_at": "2026-09-22T09:10:20Z"
+  "rejected_at": "2026-09-22T09:57:54Z"
 }
