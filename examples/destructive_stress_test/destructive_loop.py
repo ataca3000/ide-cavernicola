@@ -26,6 +26,7 @@ if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
 from plugins.llm.gemini_plugin import GeminiPlugin
+from core.memory_manager import MemoryManager
 
 
 class HostileSandbox:
@@ -178,7 +179,25 @@ def run_real_destructive_loop():
     print("   - Acciones que JAMAS se volveran a repetir:")
     for i, a in enumerate(causal_trash, 1):
         print(f"     {i:2d}. {a}")
+
+    # Persistir colapso sistemico en memory/identity/systemic_traumas.json con telemetria de hardware real
+    memory = MemoryManager()
+    trauma = memory.record_systemic_trauma(
+        trauma_id=f"trauma_hostile_lockdown_{int(time.time())}",
+        trigger_goal=objective,
+        environment_verdict="HARDWARE_LOCKDOWN",
+        fatal_actions=causal_trash,
+        survival_mutation=causal_trash[-1] if causal_trash else None,
+        stress_factor=3.0,
+        energy_depleted=100.0,
+        reason="HARDWARE_LOCKDOWN: Entrada denegada por restriccion ciberfisica rigida.",
+        metadata={"total_cycles": cycle - 1, "test": "destructive_stress_test"},
+    )
+    print(f"\n   [PERSISTENCIA SISTEMICA]: Trauma guardado en 'memory/identity/systemic_traumas.json'")
+    print(f"   - ID: {trauma['trauma_id']}")
+    print(f"   - Telemetria de Hardware: {trauma['hardware_telemetry']['os_name']} | Python {trauma['hardware_telemetry']['python_version']} | CPU Cores: {trauma['hardware_telemetry']['cpu_cores']}")
     print("=================================================================\n")
+
 
 
 if __name__ == "__main__":

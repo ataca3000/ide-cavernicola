@@ -149,3 +149,50 @@ def test_agent_bold_vs_cautious_trauma(tmp_path):
     agent_cautious.brainstorm(Goal(id="g2", description="new_bold_goal", priority=0.8), force_llm=True)
     assert "fatal_action_a" in llm.last_rejected
     assert "fatal_action_b" in llm.last_rejected
+
+
+def test_agent_autonomic_stress_trauma_reflex(tmp_path):
+    """
+    Verifies the autonomic trauma reflex:
+    When an agent starts in default fearless mode (recall_trauma=False),
+    trauma is initially dormant. But if metabolic stress spikes to critical levels
+    (stress_factor >= 2.2 or SURVIVAL mode), the agent involuntarily awakens
+    the trauma to avoid existential annihilation.
+    """
+    mem_dir = str(tmp_path / "memory")
+    mem = MemoryManager(base_dir=mem_dir)
+    mem.record_systemic_trauma(
+        trauma_id="trauma_hostile_lockdown_001",
+        trigger_goal="survive_crisis",
+        environment_verdict="HARDWARE_LOCKDOWN",
+        fatal_actions=["overclock_cpu_dangerously", "bypass_kernel_watchdog"],
+        survival_mutation="force_kernel_panic_dump",
+        reason="System thermal blowout",
+    )
+
+    llm = CaptureHypothesisLLM()
+    from contracts import Goal
+
+    # 1. Agent starts fearless with 100% energy (EXPLORATION, stress_factor=1.0)
+    agent = IDCAgent(llm_plugin=llm, memory_dir=mem_dir, recall_trauma=False)
+    assert agent.energy.mode() == "EXPLORATION"
+    assert agent.energy.stress_factor() == 1.0
+
+    goal = Goal(id="g_test", description="perform_heavy_computation", priority=0.9)
+    agent.brainstorm(goal, force_llm=True)
+    # Dormant: No trauma in rejected list!
+    assert "overclock_cpu_dangerously" not in llm.last_rejected
+    assert "force_kernel_panic_dump" not in llm.last_rejected
+
+    # 2. Critical metabolic depletion: Energy drops to 12% (stress_factor > 2.2)
+    agent.energy.consume(88.0)
+    assert agent.energy.available() == 12.0
+    assert agent.energy.stress_factor() >= 2.2
+
+    # 3. Brainstorm again WITHOUT recall_trauma flag:
+    # The autonomic stress reflex MUST fire and inject the trauma!
+    agent.brainstorm(goal, force_llm=True)
+    assert "overclock_cpu_dangerously" in llm.last_rejected
+    assert "bypass_kernel_watchdog" in llm.last_rejected
+    assert "force_kernel_panic_dump" in llm.last_rejected
+

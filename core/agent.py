@@ -293,13 +293,23 @@ class IDCAgent:
             except Exception:
                 continue
 
-        # 3. On-Demand Recall of Systemic Traumas ("Dejar de temer a la muerte")
-        if should_recall_trauma:
+        # 3. Dual Trauma Trigger: On-Demand OR Autonomic Metabolic Stress Reflex
+        # By default, systemic trauma is dormant ("dejar de temer a la muerte").
+        # However, if metabolic stress exceeds critical threshold (stress_factor >= 2.2 or SURVIVAL mode),
+        # the agent automatically triggers an involuntary trauma flashback to preserve survival.
+        stress_critical = (self.energy.stress_factor() >= 2.2) or (self.energy.mode() == "SURVIVAL")
+        active_trauma_recall = should_recall_trauma or stress_critical
+
+        if active_trauma_recall:
             traumas = self.memory.recall_systemic_traumas(on_demand=True)
             for t in traumas:
-                for fatal in t.get("fatal_actions", []):
+                chain = t.get("fatal_actions_chain") or t.get("fatal_actions") or []
+                for fatal in chain:
                     if fatal not in rejected:
                         rejected.append(fatal)
+                last_mutation = t.get("survival_mutation")
+                if last_mutation and last_mutation not in rejected:
+                    rejected.append(last_mutation)
 
         res = self.llm.generate_hypothesis(
             goal=goal.description,

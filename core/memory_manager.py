@@ -1,8 +1,10 @@
 import json
 import os
+import sys
 import time
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+
 
 
 class MemoryManager:
@@ -301,7 +303,7 @@ class MemoryManager:
                 continue
         return False
 
-    # --- 5. Systemic Trauma & Identity Failures (Recalled ONLY On-Demand) ---
+    # --- 5. Systemic Trauma & Identity Failures (Recalled ONLY On-Demand or Critical Stress) ---
     def record_systemic_trauma(
         self,
         trauma_id: str,
@@ -309,11 +311,17 @@ class MemoryManager:
         environment_verdict: str,
         fatal_actions: List[str],
         reason: str,
+        survival_mutation: Optional[str] = None,
+        stress_factor: float = 3.0,
+        energy_depleted: float = 100.0,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
-        Stores an existential or hardware lockdown trauma in memory/identity/.
+        Stores an existential hardware lockdown trauma in memory/identity/systemic_traumas.json
+        grounded in real system telemetry.
         """
+        import platform
+
         trauma_file = self.identity_dir / "systemic_traumas.json"
         existing = []
         if trauma_file.exists():
@@ -325,11 +333,20 @@ class MemoryManager:
 
         record = {
             "trauma_id": trauma_id,
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "trigger_goal": trigger_goal,
             "environment_verdict": environment_verdict,
-            "fatal_actions": fatal_actions,
+            "fatal_actions_chain": fatal_actions,
+            "survival_mutation": survival_mutation,
+            "stress_factor": round(stress_factor, 2),
+            "energy_depleted": round(energy_depleted, 2),
+            "hardware_telemetry": {
+                "os_name": platform.platform(),
+                "python_version": sys.version.split()[0],
+                "cpu_cores": os.cpu_count() or 1,
+                "hardware_lockdown": True,
+            },
             "reason": reason,
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "metadata": metadata or {},
         }
         existing.append(record)
