@@ -254,11 +254,8 @@ class CuriosityEngine:
         """
         return new_questions / max(total, 1)
 
-    # ── Backward-compat shim ──────────────────────────────────────────────────
-
     def generate(self, a: str, b: str) -> str:
         """
-        Legacy 2-argument shim for the old stub signature.
-        Use generate_question(a, b, context) in new code.
+        Legacy 2-argument shim for backward compatibility.
         """
-        return self.generate_question(a, b)
+        return f"What happens if {a} and {b} interact?"

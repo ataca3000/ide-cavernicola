@@ -1,9 +1,9 @@
 {
   "id": "event_0001",
-  "timestamp": "2026-09-22T16:55:24Z",
+  "timestamp": "2026-09-22T19:30:22Z",
   "goal": "Optimizar pipelines CI/CD",
-  "action": "optimize_optimizar_pipelines_",
-  "result": "FAILURE",
-  "energy_cost": 4.0,
-  "confidence": 0.1
+  "action": "cache_dependency_downloads",
+  "result": "SUCCESS",
+  "energy_cost": 1.5,
+  "confidence": 0.95
 }
