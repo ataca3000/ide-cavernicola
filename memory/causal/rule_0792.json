@@ -1,0 +1,20 @@
+{
+  "id": "rule_0792",
+  "goal": "Disenar nuevo mecanismo de compilacion distribuida",
+  "cause": "propose_pipelined_bytecode_splitting_strategy",
+  "effect": "execution_speedup",
+  "successful_action": "propose_pipelined_bytecode_splitting_strategy",
+  "failed_actions_superseded": [],
+  "confidence": 0.95,
+  "replications": 1,
+  "reuses": 1,
+  "conditions": [
+    "Disenar nuevo mecanismo de compilacion distribuida"
+  ],
+  "metrics_improvement": {
+    "baseline_s": 40.0,
+    "duration_s": 12.8,
+    "improvement_pct": 68.0
+  },
+  "created_at": "2026-09-22"
+}
