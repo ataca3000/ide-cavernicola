@@ -7,6 +7,9 @@ import { CognitiveTerminal } from './components/CognitiveTerminal';
 import { CausalGraphPanel } from './components/CausalGraphPanel';
 import { CausalTrashPanel } from './components/CausalTrashPanel';
 import { GoalController } from './components/GoalController';
+import { ConnectionModal } from './components/ConnectionModal';
+import { MissionHub } from './components/MissionHub';
+import { RealResultsViewer } from './components/RealResultsViewer';
 
 export const App: React.FC = () => {
   // Engines instances kept across renders
@@ -18,11 +21,50 @@ export const App: React.FC = () => {
   const [speed, setSpeed] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<'sim' | 'translation'>('sim');
 
+  // Server & API Configuration State
+  const [serverUrl, setServerUrl] = useState<string>('http://127.0.0.1:8000');
+  const [geminiKey, setGeminiKey] = useState<string>('');
+  const [serverStatus, setServerStatus] = useState<'online' | 'offline' | 'checking'>('checking');
+  const [serverDetails, setServerDetails] = useState<any>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+
+  // Mission Execution & Real Results State
+  const [isRunningMission, setIsRunningMission] = useState<boolean>(false);
+  const [activeMissionResult, setActiveMissionResult] = useState<any>(null);
+
   // Trigger UI state re-renders on engine ticks
   const [, setTick] = useState<number>(0);
 
   const world = worldRef.current;
   const agent = agentRef.current;
+
+  // Check connection to local Python server
+  const checkServerConnection = useCallback(async (customUrl?: string) => {
+    const targetUrl = (customUrl || serverUrl).replace(/\/$/, '');
+    setServerStatus('checking');
+    try {
+      const res = await fetch(`${targetUrl}/api/status`, { method: 'GET' });
+      if (res.ok) {
+        const data = await res.json();
+        setServerStatus('online');
+        setServerDetails(data);
+        agent.addLog(
+          'LEARNING',
+          `Conexión establecida con el Servidor Local IDC (${targetUrl}). Base de datos SQLite idc.db activa.`,
+          true
+        );
+      } else {
+        setServerStatus('offline');
+      }
+    } catch {
+      setServerStatus('offline');
+    }
+  }, [serverUrl, agent]);
+
+  // Initial connection check on mount
+  useEffect(() => {
+    checkServerConnection();
+  }, [checkServerConnection]);
 
   const performStep = useCallback(() => {
     agent.step(world);
@@ -65,6 +107,91 @@ export const App: React.FC = () => {
     setTick((t) => t + 1);
   };
 
+  // Execute real mission via local IDC Server
+  const handleExecuteMission = async (
+    type: 'scan' | 'memory' | 'causal_stress' | 'custom',
+    prompt?: string
+  ) => {
+    if (serverStatus !== 'online') {
+      // Offline fallback: simulate in browser
+      agent.addLog('PERCEPTION', `[MODO STANDALONE] Servidor local desconectado. Ejecutando misión simulada: ${type}`);
+      agent.setGoal(prompt || `Misión Autónoma: ${type}`);
+      agent.addFloatingText(world.getAgent().x, world.getAgent().y, 'Misión Local', '#38bdf8');
+      setTick((t) => t + 1);
+      return;
+    }
+
+    setIsRunningMission(true);
+    const targetUrl = serverUrl.replace(/\/$/, '');
+
+    const missionTitles: Record<string, string> = {
+      scan: 'Escaneo AST de Repositorio & Deuda Técnica',
+      memory: 'Auditoría de Memoria Ciberfísica SQLite',
+      causal_stress: 'Prueba de Estrés Causal Trash O(1)',
+      custom: prompt || 'Misión Personalizada',
+    };
+
+    const missionTitle = missionTitles[type] || type;
+
+    // Visual synchronization in the 2D world
+    agent.setGoal(`[MISIÓN REAL] ${missionTitle}`);
+    agent.addLog('ACTION', `>>> INICIANDO MISIÓN REAL EN SERVIDOR IDC: "${missionTitle}" <<<`, true);
+    const agentEntity = world.getAgent();
+    agent.addFloatingText(agentEntity.x, agentEntity.y, 'Ejecutando IDC...', '#f59e0b');
+    setTick((t) => t + 1);
+
+    try {
+      const response = await fetch(`${targetUrl}/api/mission`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, prompt }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error en el servidor: HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      // Mission completed successfully
+      agent.addFloatingText(agentEntity.x, agentEntity.y, '¡Misión Completada!', '#10b981');
+      agent.addLog(
+        'LEARNING',
+        `MISIÓN REAL COMPLETADA: ${result.summary}`,
+        true
+      );
+
+      // Refresh server metrics
+      checkServerConnection();
+
+      // Open real results modal
+      setActiveMissionResult(result);
+    } catch (err: any) {
+      agent.addLog('TRAUMA', `Error al ejecutar la misión real: ${err.message}`, true);
+      agent.addFloatingText(agentEntity.x, agentEntity.y, 'Fallo de Red', '#ef4444');
+    } finally {
+      setIsRunningMission(false);
+      setTick((t) => t + 1);
+    }
+  };
+
+  const handleSaveConfig = async (newUrl: string, newKey: string, newMode: string) => {
+    setServerUrl(newUrl);
+    setGeminiKey(newKey);
+    const targetUrl = newUrl.replace(/\/$/, '');
+
+    try {
+      await fetch(`${targetUrl}/api/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gemini_api_key: newKey, mode: newMode }),
+      });
+      checkServerConnection(targetUrl);
+    } catch {
+      // Ignored if offline
+    }
+  };
+
   const agentState = agent.getState();
   const agentEntity = world.getAgent();
 
@@ -88,6 +215,7 @@ export const App: React.FC = () => {
         onToggleAvatar={handleToggleAvatar}
         onSpawnWolf={handleSpawnWolf}
         onSpawnFood={handleSpawnFood}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       {/* ── Subheader Navigation Tabs (Matching Image) ────────── */}
@@ -109,13 +237,23 @@ export const App: React.FC = () => {
         </button>
 
         <div className="tab-spacer"></div>
+
+        <button
+          className="tab-settings-quick"
+          onClick={() => setIsSettingsOpen(true)}
+          title="Configurar conexión del Agente / API Key"
+        >
+          ⚙️ Servidor: <strong style={{ color: serverStatus === 'online' ? '#10b981' : '#ef4444' }}>
+            {serverStatus === 'online' ? 'Online' : 'Offline'}
+          </strong>
+        </button>
       </div>
 
       {/* ── Main Cockpit Area (Split Screen) ──────────────────── */}
       <main className="cockpit-container">
         {activeTab === 'sim' ? (
           <div className="cockpit-grid">
-            {/* Left Column: Physical World Grid & Goal Controller */}
+            {/* Left Column: Physical World Grid, Mission Hub & Goal Controller */}
             <div className="cockpit-col cockpit-left">
               <WorldCanvas
                 world={world}
@@ -126,6 +264,13 @@ export const App: React.FC = () => {
                   agent.addLog('PERCEPTION', `Inspeccionando coordenadas terrestres (${x}, ${y}).`);
                   setTick((t) => t + 1);
                 }}
+              />
+
+              <MissionHub
+                serverStatus={serverStatus}
+                isRunningMission={isRunningMission}
+                onExecuteMission={handleExecuteMission}
+                onOpenSettings={() => setIsSettingsOpen(true)}
               />
 
               <GoalController
@@ -199,6 +344,23 @@ export const App: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* ── Modals ───────────────────────────────────────────── */}
+      <ConnectionModal
+        isOpen={isSettingsOpen}
+        serverUrl={serverUrl}
+        geminiKey={geminiKey}
+        serverStatus={serverStatus}
+        serverDetails={serverDetails}
+        onClose={() => setIsSettingsOpen(false)}
+        onSave={handleSaveConfig}
+        onTestConnection={() => checkServerConnection()}
+      />
+
+      <RealResultsViewer
+        result={activeMissionResult}
+        onClose={() => setActiveMissionResult(null)}
+      />
 
       {/* ── Footer Matching Reference Image ──────────────────── */}
       <footer className="idc-footer">

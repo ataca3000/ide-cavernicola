@@ -159,6 +159,10 @@ export const Header: React.FC<HeaderProps> = ({
         <button className="btn-control btn-reset" onClick={onReset} title="Reiniciar memoria y estado">
           🔄 Reset
         </button>
+
+        <button className="btn-control btn-settings" onClick={onOpenSettings} title="Configurar Servidor y Gemini API">
+          ⚙️ Conexión &amp; API
+        </button>
       </div>
     </header>
   );
