@@ -11,6 +11,7 @@ import json
 import os
 import sys
 import traceback
+import uuid
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Dict, Any
@@ -281,7 +282,8 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
 
         # Initialize IDCAgent
         agent = IDCAgent()
-        agent_goal = Goal(description=prompt, priority=0.85)
+        goal_id = f"goal_{uuid.uuid4().hex[:8]}"
+        agent_goal = Goal(id=goal_id, description=prompt, priority=0.85)
 
         # Brainstorm viable candidate actions
         candidates = agent.brainstorm(agent_goal)
