@@ -26,7 +26,7 @@ class GeminiPlugin(BaseLLMPlugin):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = "gemini-flash-latest",
+        model: str = "gemini-flash-lite-latest",
         timeout: float = 12.0,
     ):
         if not api_key:
@@ -47,6 +47,7 @@ class GeminiPlugin(BaseLLMPlugin):
 
         self.api_key = api_key or ""
         self.model = model
+        self.models_pool = [model, "gemini-flash-latest", "gemini-flash-lite-latest"]
         self.timeout = timeout
         self.base_url = "https://generativelanguage.googleapis.com/v1beta/models"
 
@@ -55,11 +56,10 @@ class GeminiPlugin(BaseLLMPlugin):
         return bool(self.api_key and len(self.api_key) > 10)
 
     def _call_gemini_api(self, prompt: str, system_instruction: str = "") -> Optional[str]:
-        """Performs raw REST HTTP call to Gemini API using standard library."""
+        """Performs raw REST HTTP call to Gemini API with automatic model failover."""
         if not self.has_active_key():
             return None
 
-        url = f"{self.base_url}/{self.model}:generateContent?key={self.api_key}"
         full_text = prompt
         if system_instruction:
             full_text = f"SYSTEM INSTRUCTION: {system_instruction}\n\nUSER REQUEST: {prompt}"
@@ -67,27 +67,29 @@ class GeminiPlugin(BaseLLMPlugin):
         payload: Dict[str, Any] = {
             "contents": [{"parts": [{"text": full_text}]}]
         }
-
         data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(
-            url,
-            data=data,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
 
-        try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as response:
-                if response.status == 200:
-                    res_body = json.loads(response.read().decode("utf-8"))
-                    candidates = res_body.get("candidates", [])
-                    if candidates:
-                        parts = candidates[0].get("content", {}).get("parts", [])
-                        for p in parts:
-                            if "text" in p and p["text"]:
-                                return p["text"]
-        except Exception:
-            return None
+        models_to_try = [self.model] + [m for m in self.models_pool if m != self.model]
+        for candidate_model in models_to_try:
+            url = f"{self.base_url}/{candidate_model}:generateContent?key={self.api_key}"
+            req = urllib.request.Request(
+                url,
+                data=data,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=self.timeout) as response:
+                    if response.status == 200:
+                        res_body = json.loads(response.read().decode("utf-8"))
+                        candidates = res_body.get("candidates", [])
+                        if candidates:
+                            parts = candidates[0].get("content", {}).get("parts", [])
+                            for p in parts:
+                                if "text" in p and p["text"]:
+                                    return p["text"]
+            except Exception:
+                continue
 
         return None
 
@@ -106,7 +108,7 @@ class GeminiPlugin(BaseLLMPlugin):
 
         system_instruction = (
             "You are an autonomous reasoning sub-module in IDC (Inventor Driven Cognition). "
-            "Your goal is to suggest ONE precise, atomic action to achieve the goal under finite energy. "
+            "Suggest ONE precise, atomic action to achieve the goal under finite energy. "
             "Return strictly valid JSON with keys: 'action', 'hypothesis', 'expected_effect', 'estimated_cost', 'confidence'."
         )
 
@@ -127,16 +129,16 @@ class GeminiPlugin(BaseLLMPlugin):
         raw_text = self._call_gemini_api(prompt, system_instruction)
         if raw_text:
             cleaned = raw_text.strip()
-            if cleaned.startswith("```json"):
-                cleaned = cleaned[7:]
-            if cleaned.endswith("```"):
-                cleaned = cleaned[:-3]
-            try:
-                parsed = json.loads(cleaned.strip())
-                if "action" in parsed:
-                    return parsed
-            except Exception:
-                pass
+            start_brace = cleaned.find("{")
+            end_brace = cleaned.rfind("}")
+            if start_brace != -1 and end_brace != -1:
+                json_candidate = cleaned[start_brace : end_brace + 1]
+                try:
+                    parsed = json.loads(json_candidate)
+                    if "action" in parsed:
+                        return parsed
+                except Exception:
+                    pass
 
         # Heuristic offline fallback
         slug = goal.lower().replace(" ", "_")[:20]
