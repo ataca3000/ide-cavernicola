@@ -26,14 +26,39 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 4. Run Complete Unit Test Suite (Pytest)
+      - name: 4. Install ast-grep (sg)
+        uses: taiki-e/install-action@v2
+        with:
+          tool: ast-grep
+
+      - name: 5. Run Complete Unit Test Suite (Pytest)
         run: |
           pytest tests/
 
-      - name: 5. Execute Prototype 0001 (Cognitive Loop Validation)
+      - name: 6. Execute Prototype 0001 (Cognitive Loop Validation)
         run: |
           python experiments/prototype_0001/main.py
 
-      - name: 6. Run DevOps Autonomous Agent Simulation
+      - name: 7. Run DevOps Autonomous Agent Simulation
         run: |
           python examples/devops_autonomous_agent/agent.py
+
+      - name: 8. Execute Cognitive Ingest (SQLite Episodic Memory)
+        run: |
+          python scripts/idc_ingest.py
+
+      - name: 9. Compute Architectural Telemetry & Causal Metrics
+        run: |
+          python scripts/idc_queries.py
+
+      - name: 10. Capture CI Failures into Causal Trash
+        if: failure()
+        run: |
+          python scripts/store_failure.py --goal "ci_pipeline_verification" --action "github_actions_run" --error "CI Step Failed"
+
+      - name: 11. Upload IDC Episodic SQLite Database
+        uses: actions/upload-artifact@v4
+        with:
+          name: idc-sqlite-memory
+          path: memory/idc.db
+
