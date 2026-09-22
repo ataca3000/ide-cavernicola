@@ -1,0 +1,19 @@
+{
+  "id": "rule_0fe1f8b3ae8d",
+  "goal": "Refactorizar core/causal_engine.py resolviendo marcadores OPTIMIZE y TODO",
+  "cause": "enable_refactorizar_caching",
+  "effect": "goal_achieved",
+  "successful_action": "enable_refactorizar_caching",
+  "failed_actions_superseded": [],
+  "confidence": 0.93,
+  "replications": 1,
+  "reuses": 1,
+  "conditions": [
+    "refactorizar",
+    "core",
+    "causal_engine",
+    "resolviendo"
+  ],
+  "metrics_improvement": {},
+  "created_at": "2026-09-22"
+}
