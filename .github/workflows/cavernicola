@@ -1,0 +1,42 @@
+name: IDC Cognitive CI & Reality Verification
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  reality-verification:
+    name: Reality Verification (IDC Test & Cognitive Cycle)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 2. Install Astral uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: 3. Set up Python
+        run: uv python install 3.12
+
+      - name: 4. Install Dependencies
+        run: |
+          uv pip install -r requirements.txt
+
+      - name: 5. Run Unit Tests (Core Foundation & Plugins)
+        run: |
+          uv run python tests/test_phase1.py
+
+      - name: 6. Execute Prototype 0001 (Cognitive Loop Validation)
+        run: |
+          uv run python experiments/prototype_0001/main.py
+
+      - name: 7. Run DevOps Autonomous Agent Simulation
+        run: |
+          uv run python examples/devops_autonomous_agent/agent.py
