@@ -18,6 +18,7 @@ interface HeaderProps {
   onToggleAvatar: () => void;
   onSpawnWolf: () => void;
   onSpawnFood: () => void;
+  onOpenSettings: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -37,6 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleAvatar,
   onSpawnWolf,
   onSpawnFood,
+  onOpenSettings,
 }) => {
   const getEnergyColor = (val: number) => {
     if (val > 60) return '#10b981';
