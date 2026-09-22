@@ -9,6 +9,7 @@ from contracts.plugin import PluginInterface
 from contracts.rule import CausalRule
 from contracts.state import AgentState
 from contracts.trash import CausalTrashEntry
+from contracts.trauma import HardwareTelemetry, SystemicTrauma
 
 __all__ = [
     "AgentState",
@@ -16,6 +17,8 @@ __all__ = [
     "CausalTrashEntry",
     "ExperienceEvent",
     "Goal",
+    "HardwareTelemetry",
     "MetricsModel",
     "PluginInterface",
+    "SystemicTrauma",
 ]
