@@ -1,8 +1,8 @@
 {
   "id": "event_0001",
-  "timestamp": "2026-09-22T08:49:58Z",
+  "timestamp": "2026-09-22T08:53:17Z",
   "goal": "Optimizar pipelines CI/CD",
-  "action": "analyze_ci_bottlenecks_with_profiling",
+  "action": "analyze_ci_bottlenecks_with_timing_logs",
   "result": "SUCCESS",
   "energy_cost": 1.5,
   "confidence": 0.95
