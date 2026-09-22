@@ -5,7 +5,6 @@ import { World, MAP_SIZE } from '../engine/world';
 interface WorldCanvasProps {
   world: World;
   agentEntity: Entity;
-  avatar: 'caveman' | 'mammoth';
   floatingTexts: FloatingText[];
   onCellClick?: (x: number, y: number) => void;
 }
@@ -13,7 +12,6 @@ interface WorldCanvasProps {
 export const WorldCanvas: React.FC<WorldCanvasProps> = ({
   world,
   agentEntity,
-  avatar,
   floatingTexts,
   onCellClick,
 }) => {

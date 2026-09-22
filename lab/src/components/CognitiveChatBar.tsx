@@ -127,6 +127,10 @@ export const CognitiveChatBar: React.FC<CognitiveChatBarProps> = ({
         </div>
 
         <div className="chat-header-actions" onClick={(e) => e.stopPropagation()}>
+          <span className={`chat-status-pill ${serverStatus}`} title={`Servidor IDC: ${serverStatus}`}>
+            ● {serverStatus === 'online' ? 'Online' : 'Offline'}
+          </span>
+
           <select
             className="chat-mode-select"
             value={chatMode}
@@ -136,6 +140,15 @@ export const CognitiveChatBar: React.FC<CognitiveChatBarProps> = ({
             <option value="local_idc">🖥️ Local IDC Core</option>
             <option value="gemini_cloud">🌐 Gemini Nube API</option>
           </select>
+
+          <button
+            type="button"
+            className="chat-toggle-btn"
+            onClick={onOpenSettings}
+            title="Configurar conexión del Agente / API Key"
+          >
+            ⚙️
+          </button>
 
           <button
             type="button"

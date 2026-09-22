@@ -10,12 +10,10 @@ interface HeaderProps {
   dayCycle: 'day' | 'dusk' | 'night';
   stepCount: number;
   curiosityIndex: number;
-  avatar: 'caveman' | 'mammoth';
   onTogglePlay: () => void;
   onStep: () => void;
   onSetSpeed: (speed: number) => void;
   onReset: () => void;
-  onToggleAvatar: () => void;
   onSpawnWolf: () => void;
   onSpawnFood: () => void;
   onOpenSettings: () => void;
@@ -30,12 +28,10 @@ export const Header: React.FC<HeaderProps> = ({
   dayCycle,
   stepCount,
   curiosityIndex,
-  avatar,
   onTogglePlay,
   onStep,
   onSetSpeed,
   onReset,
-  onToggleAvatar,
   onSpawnWolf,
   onSpawnFood,
   onOpenSettings,

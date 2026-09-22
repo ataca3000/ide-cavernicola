@@ -91,11 +91,6 @@ export const App: React.FC = () => {
     setTick((t) => t + 1);
   };
 
-  const handleToggleAvatar = () => {
-    agent.avatar = 'caveman';
-    setTick((t) => t + 1);
-  };
-
   const handleSpawnWolf = () => {
     world.spawnPredator();
     agent.addLog('PERCEPTION', '¡Un nuevo lobo acechador ha aparecido en el glaciar!', true);
@@ -208,12 +203,10 @@ export const App: React.FC = () => {
         dayCycle={world.dayCycle}
         stepCount={agent.stepCount}
         curiosityIndex={agentState.curiosityIndex}
-        avatar={agent.avatar}
         onTogglePlay={() => setIsRunning(!isRunning)}
         onStep={performStep}
         onSetSpeed={(s) => setSpeed(s)}
         onReset={handleReset}
-        onToggleAvatar={handleToggleAvatar}
         onSpawnWolf={handleSpawnWolf}
         onSpawnFood={handleSpawnFood}
         onOpenSettings={() => setIsSettingsOpen(true)}
@@ -259,7 +252,6 @@ export const App: React.FC = () => {
               <WorldCanvas
                 world={world}
                 agentEntity={agentEntity}
-                avatar={agent.avatar}
                 floatingTexts={agent.floatingTexts}
                 onCellClick={(x, y) => {
                   agent.addLog('PERCEPTION', `Inspeccionando coordenadas terrestres (${x}, ${y}).`);
