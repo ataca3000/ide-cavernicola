@@ -23,6 +23,7 @@ from core.metrics import Metrics
 from core.purpose_filter import PurposeFilter
 from core.reinforcement_engine import ReinforcementEngine
 from core.simulation_engine import SimulationEngine
+from plugins.llm import BaseLLMPlugin, GeminiPlugin
 
 
 class IDCAgent:
@@ -35,6 +36,7 @@ class IDCAgent:
         identity_path: Optional[str] = None,
         memory_dir: Optional[str] = None,
         initial_energy: float = 100.0,
+        llm_plugin: Optional[BaseLLMPlugin] = None,
     ):
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         id_path = identity_path or os.path.join(base_dir, "memory", "identity", "id.json")
@@ -48,6 +50,7 @@ class IDCAgent:
         self.causal = CausalEngine()
         self.simulation = SimulationEngine()
         self.reinforcement = ReinforcementEngine()
+        self.llm = llm_plugin or GeminiPlugin()
 
         self.decision = DecisionEngine(
             purpose_filter=self.purpose,
@@ -182,6 +185,29 @@ class IDCAgent:
             goal.state = "failed"
 
         return self._sync_state()
+
+    def brainstorm(self, goal: Goal, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Uses the connected LLM plugin (Gemini/Ollama) to brainstorm a candidate hypothesis,
+        automatically enforcing Causal Trash negative constraints.
+        """
+        context = context or {}
+        rejected = []
+        for file in self.memory.trash_dir.glob("*.json"):
+            try:
+                import json
+                with open(file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if "hypothesis" in data:
+                        rejected.append(data["hypothesis"])
+            except Exception:
+                continue
+
+        return self.llm.generate_hypothesis(
+            goal=goal.description,
+            context=context,
+            rejected_hypotheses=rejected,
+        )
 
     def get_metrics(self) -> MetricsModel:
         """Computes and returns the formal IDC cognitive metrics vector."""
