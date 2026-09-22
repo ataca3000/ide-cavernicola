@@ -1,89 +1,51 @@
 """
-IDC (Inventor Driven Cognition) - Memory Layer
-Implements the multi-tiered selective persistence memory system:
-- Short-Term Memory (current operational context)
-- Episodic Memory (past events & observations)
-- Procedural Memory (repeatable actions & pipelines)
-- Causal Memory (validated cause-effect rules)
-- Causal Trash (rejected hypotheses & lessons from failures)
-- Identity Memory (persistent constraints and core values)
+IDC (Inventor Driven Cognition) - Memory Layer v2 (Compatibility Adapter)
+
+TD-001 FIX: MemoryLayer is now a thin compatibility adapter over MemoryManager.
+It exists solely to avoid breaking any code that imported the old MemoryLayer API.
+
+  ⚠  DO NOT use MemoryLayer in new code.
+  ✅ Use MemoryManager directly.
+
+MemoryLayer preserves the original v1 method signatures as shims that delegate
+to the canonical MemoryManager implementation. A DeprecationWarning is emitted
+on instantiation so you can track remaining usages.
 """
 
-import os
-import json
-import time
-from typing import Dict, Any, List, Optional
+import warnings
+from typing import Any, Dict, List, Optional
+
+from core.memory_manager import MemoryManager
 
 
-class MemoryLayer:
+class MemoryLayer(MemoryManager):
     """
-    Unified manager for IDC's file-based Local-First memory systems.
+    DEPRECATED — Use MemoryManager directly.
+
+    MemoryLayer is now a compatibility subclass of MemoryManager.
+    All data is persisted through MemoryManager's canonical paths, so
+    MemoryLayer and MemoryManager instances sharing the same base_path
+    will read and write from the same directories.
+
+    Legacy API differences handled by shims below:
+      - store_causal_rule()  →  save_causal_rule()
+      - store_trash()        →  record_rejected()
+      - record_episode() v1 signature (event_type, details dict)
+      - list_causal_rules()  →  wraps _rule_cache / disk
     """
 
     def __init__(self, base_path: Optional[str] = None):
-        if base_path is None:
-            # Default to memory directory in project root
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            base_path = os.path.abspath(os.path.join(current_dir, "..", "memory"))
-        
-        self.base_path = base_path
-        self.paths = {
-            "short_term": os.path.join(self.base_path, "short_term"),
-            "episodic": os.path.join(self.base_path, "episodic"),
-            "procedural": os.path.join(self.base_path, "procedural"),
-            "causal": os.path.join(self.base_path, "causal"),
-            "identity": os.path.join(self.base_path, "identity"),
-            "trash": os.path.join(self.base_path, "trash"),
-        }
-        
-        for path in self.paths.values():
-            os.makedirs(path, exist_ok=True)
+        warnings.warn(
+            "MemoryLayer is deprecated and will be removed in a future version. "
+            "Use MemoryManager directly — it supports all the same operations "
+            "plus in-memory caching for faster cognitive cycles.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(base_dir=base_path)
 
-    # --- Short-Term Memory ---
-    def set_short_term_context(self, key: str, value: Any) -> None:
-        """Saves active volatile operational context."""
-        file_path = os.path.join(self.paths["short_term"], f"{key}.json")
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump({"key": key, "value": value, "updated_at": time.time()}, f, indent=2)
+    # ── v1 Causal Memory shims ────────────────────────────────────────────────
 
-    def get_short_term_context(self, key: str) -> Optional[Any]:
-        file_path = os.path.join(self.paths["short_term"], f"{key}.json")
-        if not os.path.exists(file_path):
-            return None
-        with open(file_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return data.get("value")
-
-    # --- Episodic Memory ---
-    def record_episode(self, event_type: str, details: Dict[str, Any]) -> str:
-        """Stores past events and observations."""
-        timestamp = int(time.time() * 1000)
-        episode_id = f"ep_{timestamp}_{event_type}"
-        file_path = os.path.join(self.paths["episodic"], f"{episode_id}.json")
-        payload = {
-            "episode_id": episode_id,
-            "event": event_type,
-            "timestamp": time.time(),
-            "details": details
-        }
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(payload, f, indent=2)
-        return episode_id
-
-    # --- Procedural Memory ---
-    def save_procedure(self, name: str, steps: List[str], success_rate: float = 1.0) -> None:
-        """Stores repeatable procedures."""
-        file_path = os.path.join(self.paths["procedural"], f"{name}.json")
-        payload = {
-            "procedure": name,
-            "steps": steps,
-            "success_rate": success_rate,
-            "last_used": time.time()
-        }
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(payload, f, indent=2)
-
-    # --- Causal Memory ---
     def store_causal_rule(
         self,
         rule_id: str,
@@ -91,45 +53,54 @@ class MemoryLayer:
         effect: str,
         confidence: float,
         replications: int,
-        conditions: Optional[Dict[str, Any]] = None
+        conditions: Optional[Dict[str, Any]] = None,
     ) -> str:
-        """Stores validated causal relationships."""
-        file_path = os.path.join(self.paths["causal"], f"{rule_id}.json")
-        payload = {
-            "rule_id": rule_id,
-            "cause": cause,
-            "effect": effect,
-            "confidence": confidence,
-            "replications": replications,
-            "conditions": conditions or {},
-            "stored_at": time.time()
-        }
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(payload, f, indent=2)
+        """v1 shim → delegates to MemoryManager.save_causal_rule()."""
+        cond_list = list(conditions.keys()) if isinstance(conditions, dict) else (conditions or [])
+        self.save_causal_rule(
+            rule_id=rule_id,
+            cause=cause,
+            effect=effect,
+            confidence=confidence,
+            replications=replications,
+            conditions=cond_list,
+        )
         return rule_id
 
-    # --- Causal Trash (Lessons from failures) ---
-    def store_trash(self, failed_hypothesis: str, cause_of_failure: str, context: Optional[Dict[str, Any]] = None) -> str:
-        """Stores rejected hypotheses and errors to prevent repeating mistakes."""
-        timestamp = int(time.time() * 1000)
-        trash_id = f"trash_{timestamp}"
-        file_path = os.path.join(self.paths["trash"], f"{trash_id}.json")
-        payload = {
-            "trash_id": trash_id,
-            "failed_hypothesis": failed_hypothesis,
-            "cause_of_failure": cause_of_failure,
-            "context": context or {},
-            "rejected_at": time.time()
-        }
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(payload, f, indent=2)
-        return trash_id
+    # ── v1 Trash shims ───────────────────────────────────────────────────────
+
+    def store_trash(
+        self,
+        failed_hypothesis: str,
+        cause_of_failure: str,
+        context: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """v1 shim → delegates to MemoryManager.record_rejected()."""
+        result = self.record_rejected(
+            hypothesis=failed_hypothesis,
+            reason=cause_of_failure,
+        )
+        return result.get("id", "")
+
+    # ── v1 Episodic Memory shim ──────────────────────────────────────────────
+
+    def record_episode_v1(self, event_type: str, details: Dict[str, Any]) -> str:
+        """
+        v1 episodic shim (old signature: event_type + details dict).
+        Use record_episode(goal, action, result, energy_cost) in new code.
+        """
+        episode_id = self.record_episode(
+            goal=details.get("goal", event_type),
+            action=details.get("action", ""),
+            result=details.get("result", ""),
+            energy_cost=details.get("energy_cost", 0.0),
+            confidence=details.get("confidence", 1.0),
+        ).get("id", "")
+        return episode_id
+
+    # ── v1 Rule listing shim ─────────────────────────────────────────────────
 
     def list_causal_rules(self) -> List[Dict[str, Any]]:
-        """Returns all validated causal rules."""
-        rules = []
-        for filename in os.listdir(self.paths["causal"]):
-            if filename.endswith(".json"):
-                with open(os.path.join(self.paths["causal"], filename), "r", encoding="utf-8") as f:
-                    rules.append(json.load(f))
-        return rules
+        """v1 shim — returns all cached causal rules as a list."""
+        self._load_rule_cache()
+        return list(self._rule_cache.values())

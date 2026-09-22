@@ -217,7 +217,13 @@ def cmd_telemetry(args):
     print("   * 100% - 20% Energia -> MODO EXPLORACION  | Estres: 1.00x | Trauma: Dormido (Audaz)")
     print("   *  20% -  5% Energia -> MODO OPTIMIZACION | Estres: 1.25x - 2.20x | Trauma: Alerta")
     print("   *   5% -  0% Energia -> MODO SURVIVAL     | Estres: 2.20x - 3.00x | Trauma: DESPIERTO (Flashback)")
+
+    cache = memory.cache_stats()
+    print("\n4. INDICES EN MEMORIA (Cache IDC v0.3):")
+    print(f"   * Reglas cargadas en RAM:  {cache['rules_cached']} (cache {'caliente' if cache['rule_cache_loaded'] else 'frio'})")
+    print(f"   * Trash indexado en RAM:   {cache['trash_indexed']} entradas (cache {'caliente' if cache['trash_cache_loaded'] else 'frio'})")
     print("=" * 75)
+
 
 
 def cmd_think(args):

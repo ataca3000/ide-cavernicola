@@ -1,45 +1,160 @@
+"""
+IDC (Inventor Driven Cognition) - Memory Manager v0.3
+Coordinates the four core persistence layers with in-memory indexing:
+  - Episodic Memory: past events, actions, outcomes, costs
+  - Procedural Memory: repeatable execution steps, success rates
+  - Causal Memory: verified cause-and-effect rules (A -> B)
+  - Causal Trash: rejected hypotheses and lessons from mistakes
+
+Performance fix (TD-005):
+  Hot-path methods (find_proven_rule_for_goal, is_rejected, get_causal_rule,
+  find_rules_by_cause) now use lazily-loaded in-memory indices instead of
+  O(n) disk scans on every cognitive cycle.
+"""
+
 import json
 import os
+import re
 import sys
 import time
+import uuid
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-
+from typing import Any, Dict, List, Optional
 
 
 class MemoryManager:
     """
-    IDC v0.2 Memory Manager
+    IDC v0.3 Memory Manager
     Coordinates the four core persistence layers:
       - Episodic Memory: past events, actions, outcomes, costs
       - Procedural Memory: repeatable execution steps, success rates
       - Causal Memory: verified cause-and-effect rules (A -> B)
       - Causal Trash: rejected hypotheses and lessons from mistakes
+
+    In-memory indices are kept consistent with on-disk state on every write,
+    so reads are always served from RAM after the first lazy load.
     """
 
     def __init__(self, base_dir: Optional[str] = None):
         if base_dir is None:
-            # Default to the project memory directory
             base_dir = str(Path(__file__).parent.parent / "memory")
         self.base_dir = Path(base_dir)
+        self.short_term_dir = self.base_dir / "short_term"
         self.episodic_dir = self.base_dir / "episodic"
         self.procedural_dir = self.base_dir / "procedural"
         self.causal_dir = self.base_dir / "causal"
         self.trash_dir = self.base_dir / "trash"
         self.identity_dir = self.base_dir / "identity"
 
-        for p in [self.episodic_dir, self.procedural_dir, self.causal_dir, self.trash_dir, self.identity_dir]:
+        for p in [
+            self.short_term_dir,
+            self.episodic_dir,
+            self.procedural_dir,
+            self.causal_dir,
+            self.trash_dir,
+            self.identity_dir,
+        ]:
             p.mkdir(parents=True, exist_ok=True)
 
-    # --- Generic Save ---
+        # ── In-memory indices (lazy — loaded on first access) ────────────────
+        # Avoids O(n) disk scans on every brainstorm() / decide() call.
+        self._rule_cache: Dict[str, Dict[str, Any]] = {}   # keyed by rule_id
+        self._rule_cache_loaded: bool = False
+        self._trash_index: List[str] = []   # normalized strings (hypothesis + failed_action)
+        self._trash_index_loaded: bool = False
+
+    # ── Cache Management ─────────────────────────────────────────────────────
+
+    def _load_rule_cache(self) -> None:
+        """Lazily loads all causal rules from disk into RAM. Idempotent."""
+        if self._rule_cache_loaded:
+            return
+        for file in self.causal_dir.glob("*.json"):
+            try:
+                with open(file, "r", encoding="utf-8") as f:
+                    rule = json.load(f)
+                rule_id = rule.get("id")
+                if rule_id:
+                    self._rule_cache[rule_id] = rule
+            except Exception:
+                continue
+        self._rule_cache_loaded = True
+
+    def _load_trash_index(self) -> None:
+        """Lazily builds trash keyword index in RAM. Idempotent."""
+        if self._trash_index_loaded:
+            return
+        for file in self.trash_dir.glob("*.json"):
+            try:
+                with open(file, "r", encoding="utf-8") as f:
+                    rej = json.load(f)
+                h = rej.get("hypothesis", "").lower().strip()
+                fa = rej.get("failed_action", "").lower().strip()
+                if h and h not in self._trash_index:
+                    self._trash_index.append(h)
+                if fa and fa not in self._trash_index:
+                    self._trash_index.append(fa)
+            except Exception:
+                continue
+        self._trash_index_loaded = True
+
+    def warm_cache(self) -> Dict[str, Any]:
+        """
+        Pre-warms both in-memory indices eagerly.
+        Call at agent startup to front-load disk I/O and guarantee
+        zero-latency lookups during the cognitive loop.
+        """
+        self._load_rule_cache()
+        self._load_trash_index()
+        return self.cache_stats()
+
+    def cache_stats(self) -> Dict[str, Any]:
+        """Returns live cache telemetry for diagnostics and monitoring."""
+        return {
+            "rules_cached": len(self._rule_cache),
+            "trash_indexed": len(self._trash_index),
+            "rule_cache_loaded": self._rule_cache_loaded,
+            "trash_cache_loaded": self._trash_index_loaded,
+        }
+
+    def invalidate_cache(self) -> None:
+        """
+        Clears all in-memory indices.
+        Forces a full reload from disk on the next access.
+        Use when external writes bypass this MemoryManager instance.
+        """
+        self._rule_cache.clear()
+        self._rule_cache_loaded = False
+        self._trash_index.clear()
+        self._trash_index_loaded = False
+
+    # ── Generic Save ─────────────────────────────────────────────────────────
+
     def save_event(self, event: Dict[str, Any], path: str) -> None:
-        """Original generic event saver."""
+        """Original generic event saver (backward compat)."""
         target = Path(path)
         target.parent.mkdir(parents=True, exist_ok=True)
         with open(target, "w", encoding="utf-8") as f:
             json.dump(event, f, indent=2)
 
-    # --- 1. Episodic Memory ---
+    # ── Short-Term Memory ────────────────────────────────────────────────────
+
+    def set_short_term_context(self, key: str, value: Any) -> None:
+        """Saves active volatile operational context."""
+        file_path = self.short_term_dir / f"{key}.json"
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump({"key": key, "value": value, "updated_at": time.time()}, f, indent=2)
+
+    def get_short_term_context(self, key: str) -> Optional[Any]:
+        """Retrieves a volatile context value by key."""
+        file_path = self.short_term_dir / f"{key}.json"
+        if not file_path.exists():
+            return None
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f).get("value")
+
+    # ── 1. Episodic Memory ───────────────────────────────────────────────────
+
     def record_episode(
         self,
         goal: str,
@@ -47,7 +162,7 @@ class MemoryManager:
         result: str,
         energy_cost: float,
         confidence: float = 1.0,
-        episode_id: Optional[str] = None
+        episode_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Stores a distinct past event in memory/episodic/."""
         if not episode_id:
@@ -59,7 +174,7 @@ class MemoryManager:
             "action": action,
             "result": result,
             "energy_cost": energy_cost,
-            "confidence": confidence
+            "confidence": confidence,
         }
         file_path = self.episodic_dir / f"{episode_id}.json"
         with open(file_path, "w", encoding="utf-8") as f:
@@ -79,14 +194,17 @@ class MemoryManager:
                 continue
         return sorted(episodes, key=lambda x: x.get("timestamp", ""))
 
-    # --- 2. Procedural Memory ---
-    def save_procedure(self, name: str, steps: List[str], success_rate: float = 1.0) -> Dict[str, Any]:
+    # ── 2. Procedural Memory ─────────────────────────────────────────────────
+
+    def save_procedure(
+        self, name: str, steps: List[str], success_rate: float = 1.0
+    ) -> Dict[str, Any]:
         """Saves a repeatable procedure in memory/procedural/."""
         proc = {
             "name": name,
             "steps": steps,
             "success_rate": round(success_rate, 2),
-            "updated_at": time.strftime("%Y-%m-%d", time.gmtime())
+            "updated_at": time.strftime("%Y-%m-%d", time.gmtime()),
         }
         file_path = self.procedural_dir / f"{name}.json"
         with open(file_path, "w", encoding="utf-8") as f:
@@ -101,14 +219,15 @@ class MemoryManager:
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
 
-    def update_procedure_success(self, name: str, success: bool) -> Optional[Dict[str, Any]]:
+    def update_procedure_success(
+        self, name: str, success: bool
+    ) -> Optional[Dict[str, Any]]:
         """Dynamically updates the success rate of an existing procedure."""
         proc = self.get_procedure(name)
         if not proc:
             return None
         current_rate = proc.get("success_rate", 1.0)
-        # Moving average update
-        alpha = 0.2
+        alpha = 0.2  # exponential moving average
         new_rate = (1.0 - alpha) * current_rate + alpha * (1.0 if success else 0.0)
         proc["success_rate"] = round(new_rate, 2)
         proc["updated_at"] = time.strftime("%Y-%m-%d", time.gmtime())
@@ -117,7 +236,8 @@ class MemoryManager:
             json.dump(proc, f, indent=2)
         return proc
 
-    # --- 3. Causal Memory ---
+    # ── 3. Causal Memory ─────────────────────────────────────────────────────
+
     def save_causal_rule(
         self,
         rule_id: str,
@@ -132,7 +252,10 @@ class MemoryManager:
         metrics_improvement: Optional[Dict[str, Any]] = None,
         reuses: int = 0,
     ) -> Dict[str, Any]:
-        """Saves a validated causal rule with cumulative memory in memory/causal/."""
+        """
+        Saves a validated causal rule with cumulative memory in memory/causal/.
+        Keeps the in-memory cache consistent on every write — no invalidation needed.
+        """
         rule = {
             "id": rule_id,
             "goal": goal,
@@ -150,102 +273,106 @@ class MemoryManager:
         file_path = self.causal_dir / f"{rule_id}.json"
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(rule, f, indent=2)
+
+        # ── Keep cache warm (write-through) ──────────────────────────────────
+        self._rule_cache[rule_id] = rule
+
         return rule
 
     def get_causal_rule(self, rule_id: str) -> Optional[Dict[str, Any]]:
-        direct = self.causal_dir / f"{rule_id}.json"
-        if direct.exists():
-            with open(direct, "r", encoding="utf-8") as f:
-                return json.load(f)
-        for file in self.causal_dir.glob("*.json"):
-            try:
-                with open(file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    if data.get("id") == rule_id:
-                        return data
-            except Exception:
-                continue
-        return None
+        """
+        Returns a causal rule by ID.
+        Cache-first: O(1) lookup after first load instead of full disk scan.
+        """
+        self._load_rule_cache()
+        return self._rule_cache.get(rule_id)
 
     def find_rules_by_cause(self, cause_keyword: str) -> List[Dict[str, Any]]:
-        """Finds causal rules matching a cause condition."""
-        matches = []
-        for file in self.causal_dir.glob("*.json"):
-            try:
-                with open(file, "r", encoding="utf-8") as f:
-                    rule = json.load(f)
-                    if cause_keyword.lower() in rule.get("cause", "").lower():
-                        matches.append(rule)
-            except Exception:
-                continue
-        return matches
+        """
+        Finds causal rules matching a cause condition.
+        Cache-backed: iterates RAM instead of re-reading all JSON files.
+        """
+        self._load_rule_cache()
+        kw = cause_keyword.lower()
+        return [
+            rule for rule in self._rule_cache.values()
+            if kw in rule.get("cause", "").lower()
+        ]
 
-    def find_proven_rule_for_goal(self, goal_description: str, min_confidence: float = 0.7) -> Optional[Dict[str, Any]]:
+    def find_proven_rule_for_goal(
+        self,
+        goal_description: str,
+        min_confidence: float = 0.7,
+    ) -> Optional[Dict[str, Any]]:
         """
         Searches causal memory for an existing rule that solves or matches the goal.
-        Returns the highest-confidence matching rule, or None if novelty/exploration is required.
+        Returns the highest-confidence matching rule, or None if exploration is required.
+
+        Performance: cache-backed — zero disk I/O after first call.
         """
-        if not self.causal_dir.exists():
+        self._load_rule_cache()
+        if not self._rule_cache:
             return None
 
-        import re
         query_tokens = set(re.findall(r"\w+", goal_description.lower()))
-        # Filter out common stop words to keep semantic signal
-        stop_words = {"de", "la", "el", "en", "y", "a", "los", "las", "un", "una", "para", "por", "con", "del", "al", "the", "in", "and", "to", "for", "with", "of"}
+        stop_words = {
+            "de", "la", "el", "en", "y", "a", "los", "las", "un", "una",
+            "para", "por", "con", "del", "al",
+            "the", "in", "and", "to", "for", "with", "of",
+        }
         meaningful_query_tokens = query_tokens - stop_words
         if not meaningful_query_tokens:
             meaningful_query_tokens = query_tokens
 
-        best_rule = None
+        best_rule: Optional[Dict[str, Any]] = None
         best_score = 0.0
 
-        for file in self.causal_dir.glob("*.json"):
-            try:
-                with open(file, "r", encoding="utf-8") as f:
-                    rule = json.load(f)
-
-                conf = rule.get("confidence", 0.0)
-                if conf < min_confidence:
-                    continue
-
-                rule_goal = rule.get("goal", "").lower()
-                rule_cause = rule.get("cause", "").lower()
-                conditions = " ".join(rule.get("conditions", [])).lower()
-                text_pool = f"{rule_goal} {rule_cause} {conditions}"
-                pool_tokens = set(re.findall(r"\w+", text_pool))
-
-                intersection = meaningful_query_tokens.intersection(pool_tokens)
-                if intersection:
-                    score = (len(intersection) / len(meaningful_query_tokens)) * conf
-                    if score > best_score:
-                        best_score = score
-                        best_rule = rule
-            except Exception:
+        for rule in self._rule_cache.values():
+            conf = rule.get("confidence", 0.0)
+            if conf < min_confidence:
                 continue
 
-        # If substantial semantic overlap is detected, return proven rule
-        if best_score >= 0.35 and best_rule:
-            return best_rule
-        return None
+            rule_goal = rule.get("goal", "").lower()
+            rule_cause = rule.get("cause", "").lower()
+            conditions = " ".join(rule.get("conditions", [])).lower()
+            text_pool = f"{rule_goal} {rule_cause} {conditions}"
+            pool_tokens = set(re.findall(r"\w+", text_pool))
 
-    def reinforce_rule(self, rule_id: str, verified: bool) -> Optional[Dict[str, Any]]:
-        """Increments replication count and reinforces confidence."""
-        target_file = self.causal_dir / f"{rule_id}.json"
-        rule = None
-        if target_file.exists():
-            with open(target_file, "r", encoding="utf-8") as f:
-                rule = json.load(f)
-        else:
-            for file in self.causal_dir.glob("*.json"):
-                try:
-                    with open(file, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                        if data.get("id") == rule_id:
-                            rule = data
-                            target_file = file
-                            break
-                except Exception:
-                    continue
+            intersection = meaningful_query_tokens.intersection(pool_tokens)
+            if intersection:
+                score = (len(intersection) / len(meaningful_query_tokens)) * conf
+                if score > best_score:
+                    best_score = score
+                    best_rule = rule
+
+        return best_rule if best_score >= 0.35 else None
+
+    def reinforce_rule(
+        self, rule_id: str, verified: bool
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Increments replication count and reinforces confidence.
+        Write-through: updates both disk and in-memory cache atomically.
+        """
+        self._load_rule_cache()
+        rule = self._rule_cache.get(rule_id)
+
+        # Fallback: try to find by scanning if cache missed (e.g. external write)
+        if rule is None:
+            target_file = self.causal_dir / f"{rule_id}.json"
+            if target_file.exists():
+                with open(target_file, "r", encoding="utf-8") as f:
+                    rule = json.load(f)
+            else:
+                for file in self.causal_dir.glob("*.json"):
+                    try:
+                        with open(file, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                            if data.get("id") == rule_id:
+                                rule = data
+                                break
+                    except Exception:
+                        continue
 
         if not rule:
             return None
@@ -254,12 +381,18 @@ class MemoryManager:
         curr_conf = rule.get("confidence", 0.5)
         delta = 0.05 if verified else -0.15
         rule["confidence"] = round(min(1.0, max(0.0, curr_conf + delta)), 2)
-        with open(target_file, "w", encoding="utf-8") as f:
+
+        file_path = self.causal_dir / f"{rule_id}.json"
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(rule, f, indent=2)
+
+        # ── Write-through cache update ────────────────────────────────────────
+        self._rule_cache[rule_id] = rule
+
         return rule
 
+    # ── 4. Causal Trash ──────────────────────────────────────────────────────
 
-    # --- 4. Causal Trash ---
     def record_rejected(
         self,
         hypothesis: str,
@@ -268,8 +401,11 @@ class MemoryManager:
         goal: str = "",
         metrics: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Stores a failed hypothesis/action with metrics in Causal Trash."""
-        import re
+        """
+        Stores a failed hypothesis/action with metrics in Causal Trash.
+        Write-through: adds keywords to in-memory index immediately,
+        so is_rejected() returns True without waiting for next cache load.
+        """
         slug = re.sub(r"[^a-zA-Z0-9_]", "_", hypothesis.lower().strip())[:30]
         rejected = {
             "id": f"trash_{slug}_{int(time.time())}",
@@ -284,26 +420,30 @@ class MemoryManager:
         file_path = self.trash_dir / f"rejected_{slug}.json"
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(rejected, f, indent=2)
+
+        # ── Write-through index update ────────────────────────────────────────
+        normalized = hypothesis.lower().strip()
+        if normalized and normalized not in self._trash_index:
+            self._trash_index.append(normalized)
+
         return rejected
 
+    # Backward-compat alias
     add_to_trash = record_rejected
 
     def is_rejected(self, hypothesis_keyword: str) -> bool:
-        """Checks if a hypothesis or action has been rejected before."""
-        kw = hypothesis_keyword.lower().strip()
-        for file in self.trash_dir.glob("*.json"):
-            try:
-                with open(file, "r", encoding="utf-8") as f:
-                    rej = json.load(f)
-                    h = rej.get("hypothesis", "").lower().strip()
-                    fa = rej.get("failed_action", "").lower().strip()
-                    if (h and (kw in h or h in kw)) or (fa and (kw in fa or fa in kw)):
-                        return True
-            except Exception:
-                continue
-        return False
+        """
+        Checks if a hypothesis or action has been rejected before.
 
-    # --- 5. Systemic Trauma & Identity Failures (Recalled ONLY On-Demand or Critical Stress) ---
+        Performance: index-backed — after first load, this is an in-memory
+        string scan instead of opening and parsing every JSON file on disk.
+        """
+        self._load_trash_index()
+        kw = hypothesis_keyword.lower().strip()
+        return any((kw in item or item in kw) for item in self._trash_index)
+
+    # ── 5. Systemic Trauma & Identity Failures ───────────────────────────────
+
     def record_systemic_trauma(
         self,
         trauma_id: str,
@@ -323,7 +463,7 @@ class MemoryManager:
         import platform
 
         trauma_file = self.identity_dir / "systemic_traumas.json"
-        existing = []
+        existing: List[Dict[str, Any]] = []
         if trauma_file.exists():
             try:
                 with open(trauma_file, "r", encoding="utf-8") as f:
@@ -374,4 +514,3 @@ class MemoryManager:
                 return json.load(f)
         except Exception:
             return []
-

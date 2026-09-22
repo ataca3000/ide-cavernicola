@@ -1,0 +1,14 @@
+{
+  "id": "trash_optimize_optimizar_pipelines__1790096124",
+  "goal": "Optimizar pipelines CI/CD",
+  "failed_action": "optimize_optimizar_pipelines_",
+  "hypothesis": "optimize_optimizar_pipelines_",
+  "failures": 1,
+  "reason": "Performance regression: time increased by 25.0% (from 40.0s to 50.0s)",
+  "metrics": {
+    "baseline_s": 40.0,
+    "duration_s": 50.0,
+    "improvement_pct": -25.0
+  },
+  "rejected_at": "2026-09-22T16:55:24Z"
+}

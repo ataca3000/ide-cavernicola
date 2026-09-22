@@ -1,15 +1,22 @@
-import os
+"""
+IDC (Inventor Driven Cognition) - Cognitive Loop Demo
+Quick sanity-check script: boots Identity, EnergyManager, and CuriosityEngine
+and prints the agent's initial cognitive state.
+
+TD-007 FIX: imports now use the package namespace (core.*) instead of bare
+module names, so the script works from any working directory.
+"""
+
 from pathlib import Path
-from identity import Identity
-from energy_manager import EnergyManager
-from curiosity_engine import CuriosityEngine
+from core.identity import Identity
+from core.energy_manager import EnergyManager
+from core.curiosity_engine import CuriosityEngine
 
-# Support execution from within core/ or from project root
-id_path = "../memory/identity/id.json"
-if not os.path.exists(id_path):
-    id_path = str(Path(__file__).parent.parent / "memory" / "identity" / "id.json")
+# Resolve identity file relative to project root regardless of CWD
+_project_root = Path(__file__).parent.parent
+id_path = _project_root / "memory" / "identity" / "id.json"
 
-identity = Identity(id_path)
+identity = Identity(str(id_path))
 energy = EnergyManager()
 curiosity = CuriosityEngine()
 

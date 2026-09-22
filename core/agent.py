@@ -5,6 +5,7 @@ Curiosity, Causal Reasoning, Simulation, and Reinforcement under finite resource
 """
 
 import os
+import uuid
 from typing import Any, Dict, List, Optional
 
 from contracts.event import ExperienceEvent
@@ -69,6 +70,7 @@ class IDCAgent:
         self._aligned_actions: int = 0
         self._failed_actions_history: Dict[str, List[str]] = {}
         self._last_rl_feedback: Optional[Dict[str, Any]] = None
+        self._llm_brainstorm_count: int = 0   # tracks novel (non-cached) explorations
 
         self.state = AgentState(
             energy=self.energy.available(),
@@ -78,6 +80,9 @@ class IDCAgent:
             uncertainty=0.0,
             version="0.1.0",
         )
+
+        # Pre-warm in-memory indices so first cognitive cycle has zero cold-start I/O
+        self.memory.warm_cache()
 
     def run_step(
         self,
@@ -182,7 +187,9 @@ class IDCAgent:
         )
 
         if is_success:
-            rule_id = f"rule_{abs(hash(candidate_action)) % 10000:04d}"
+            # TD-006 FIX: uuid4 hex guarantees global uniqueness — no hash
+            # collisions, no PYTHONHASHSEED non-determinism, no overwrites.
+            rule_id = f"rule_{uuid.uuid4().hex[:12]}"
             superseded = list(self._failed_actions_history.get(goal.description, []))
             rule = CausalRule(
                 id=rule_id,
@@ -243,6 +250,13 @@ class IDCAgent:
             complexity=complexity,
             innovation_index=innovation_index,
         )
+
+        # TD-009 FIX: RL feedback is now live — adaptation_delta nudges uncertainty.
+        # Positive delta (success) reduces uncertainty; negative (failure) raises it.
+        if self._last_rl_feedback:
+            delta = self._last_rl_feedback.get("adaptation_delta", 0.0)
+            new_uncertainty = max(0.0, min(1.0, self.state.uncertainty - delta))
+            self.state.uncertainty = round(new_uncertainty, 3)
 
         return self._sync_state()
 
@@ -318,6 +332,8 @@ class IDCAgent:
         )
         res["from_causal_memory"] = False
         res["tokens_saved"] = False
+        # Track LLM calls for real curiosity_index computation
+        self._llm_brainstorm_count += 1
         return res
 
     def get_metrics(self) -> MetricsModel:
@@ -330,10 +346,21 @@ class IDCAgent:
         total_failed_constraints = sum(len(v) for v in self._failed_actions_history.values())
         innov_index = Metrics.innovation_index(self._total_actions, total_failed_constraints)
 
+        # TD-008 FIX: curiosity_index now reflects real exploration rate —
+        # ratio of novel LLM queries (new situations) to total actions taken.
+        curiosity = Metrics.curiosity_index(
+            new=self._llm_brainstorm_count,
+            total=total,
+        )
+
+        # RL adaptation quality: use last feedback delta as adaptation signal
+        rl_delta = abs(self._last_rl_feedback.get("adaptation_delta", 0.0)) if self._last_rl_feedback else 0.0
+        adaptation = Metrics.adaptation_index(improvement=rl_delta, time=max(1, total))
+
         return MetricsModel(
-            curiosity_index=0.75,
+            curiosity_index=round(curiosity, 3),
             replication_index=float(rules_count),
-            adaptation_index=Metrics.adaptation_index(0.8, 2),
+            adaptation_index=round(adaptation, 4),
             innovation_index=innov_index,
             purpose_alignment=round(alignment, 2),
             learning_efficiency=round(efficiency, 2),
