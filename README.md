@@ -1,4 +1,4 @@
-# IDC
+# IDC cavernicola
 # Inventor Driven Cognition
 
 > Purpose-Driven Cognitive Architecture for Autonomous Agents
@@ -802,6 +802,8 @@ Finite Resources
 
 with the objective of maximizing useful learning and goal achievement rather than maximizing stored knowledge.
 
+
+   brecha soluciones ds ---luis felipe duran salinas -ataca 3000
 ---
 
 > *"La inteligencia no es tenerlo todo en la cabeza; es saber conectar, aprender y avanzar hasta su propósito."*
