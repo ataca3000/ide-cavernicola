@@ -1,0 +1,14 @@
+{
+  "id": "trash_enable_torch_compile_inductor_1790062217",
+  "goal": "Acelerar compilacion de contenedores y entrenamiento de IA",
+  "failed_action": "enable_torch_compile_inductor",
+  "hypothesis": "enable_torch_compile_inductor",
+  "failures": 1,
+  "reason": "Performance regression: time increased by 25.0% (from 45.0s to 56.25s)",
+  "metrics": {
+    "baseline_s": 45.0,
+    "duration_s": 56.25,
+    "improvement_pct": -25.0
+  },
+  "rejected_at": "2026-09-22T07:30:17Z"
+}

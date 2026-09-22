@@ -1,0 +1,22 @@
+{
+  "id": "rule_2322",
+  "goal": "Acelerar compilacion de contenedores y entrenamiento de IA",
+  "cause": "implement_layer_wise_cache_partitioning",
+  "effect": "latency_reduced_by_68pct",
+  "successful_action": "implement_layer_wise_cache_partitioning",
+  "failed_actions_superseded": [
+    "enable_torch_compile_inductor"
+  ],
+  "confidence": 0.95,
+  "replications": 1,
+  "reuses": 1,
+  "conditions": [
+    "Acelerar compilacion de contenedores y entrenamiento de IA"
+  ],
+  "metrics_improvement": {
+    "baseline_s": 45.0,
+    "duration_s": 14.4,
+    "improvement_pct": 68.0
+  },
+  "created_at": "2026-09-22"
+}
