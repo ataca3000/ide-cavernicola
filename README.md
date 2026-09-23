@@ -46,6 +46,39 @@ Instead, it proposes a framework for orchestrating reasoning, experimentation, m
 
 ---
 
+# 🏛️ Arquitectura Monorepo (Turbo Structure)
+
+El ecosistema de **IDC Cavernícola** se organiza en tres pilares independientes y complementarios:
+
+```
+IDC/ (Monorepo)
+├── 🖥️ lab/       -> Consola & Puente Humano-Máquina (Frontend React/Vite & Telemetría en Vivo)
+├── 🧠 core/      -> Corteza Cognitiva (El IDE Cavernícola en Python, Razonamiento Causal & Memoria)
+└── 🦾 chasis/    -> Puente Ciberfísico & Hardware (Arduino, PLC, Sensores, Cámaras y Actuadores)
+```
+
+### 1. `lab/` — La Consola (Puente de Comunicación Humano-Máquina)
+* **Propósito:** Interfaz de observabilidad y control bidireccional.
+* **Función:** El humano supervisa en tiempo real los pulsos activos de reacción, el genoma de mutación y los recuerdos del agente; la máquina presenta sus hipótesis y solicita validaciones cuando la incertidumbre supera los umbrales seguros.
+
+### 2. `core/` & `contracts/` — La Corteza Cognitiva (IDE Cavernícola en Python)
+* **Propósito:** El cerebro autónomo regido por optimización energética y memoria selectiva.
+* **Componentes:**
+  * **Motor de Reacción por Pulsos ($O(1)$):** Reflejos sub-milisegundo en RAM ante picos críticos de sensores.
+  * **Librerías de Realidad Plug-and-Play:** Carga modular de leyes físicas, térmicas, químicas o de sistemas (*"No robots químicos donde no se ocupan"*).
+  * **Bóveda de Memoria Selectiva:** Distinción estricta entre *Recuerdos Hipotéticos* (conjeturas "¿y si...?") y *Recuerdos Lógicos Citables* (hechos empíricamente probados con hash criptográfico SHA256).
+  * **Bucle de Tenacidad:** Persistencia inquebrantable que descarta errores en *Causal Trash* ("así no"), consulta observadores y muta la acción hasta resolver el reto.
+
+### 3. `chasis/` — El Puente Ciberfísico (Hardware & Sensores)
+* **Propósito:** La extensión tangible del agente hacia el mundo físico e industrial.
+* **Componentes:**
+  * Integración con microcontroladores (**Arduino, ESP32**) y automatización (**PLC, Modbus, CAN**).
+  * Percepción en tiempo real: cámaras de visión computacional, sensores de corriente, temperatura, proximidad y LIDAR.
+  * De aquí nacen las capacidades físicas del agente para interactuar y transformar su entorno real.
+
+---
+
+
 # Core Principles
 
 ## 1. Finite Resources

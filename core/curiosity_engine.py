@@ -259,3 +259,31 @@ class CuriosityEngine:
         Legacy 2-argument shim for backward compatibility.
         """
         return f"What happens if {a} and {b} interact?"
+
+    def generate_inventor_curiosity(
+        self,
+        experience_lessons: Optional[List[str]] = None,
+        environment_understanding: Optional[Dict[str, Any]] = None,
+        system_bottleneck: str = "componente_bajo_esfuerzo",
+    ) -> List[str]:
+        """
+        'CURIOSIDAD OBTENIDA POR EXPERIENCIA Y COMPRENSIÓN DE TU ENTORNO'
+        The human inventor's curiosity is NOT blind random noise (epsilon-greedy).
+        It is the causal spark '¿Y SI...?' born from:
+          1. Experiencia: Conocer lo que ya falló en el taller ('así no', desgaste, fatiga).
+          2. Comprensión del Entorno: Gravedad gratuita, puntos de apoyo, chatarra validada, lubricación.
+          3. Deconstrucción Estructural: Entender el material aplicado hasta sus límites físicos.
+        """
+        experience_lessons = experience_lessons or []
+        environment_understanding = environment_understanding or {}
+
+        questions = [
+            f"¿Y si aliviamos el esfuerzo de '{system_bottleneck}' cambiando la morfología a geometría perforada o hueca para ahorrar peso y torque?",
+            f"¿Y si desacoplamos el punto de fricción de '{system_bottleneck}' con una pieza o fusible de sacrificio para que el desgaste no dañe el motor principal?",
+            f"¿Y si colocamos dos rodillos o ejes encontrados girando hacia adentro para cancelar momentos de torsión y autoalimentar?",
+        ]
+
+        for q in questions:
+            self.record_question(question=q, goal=system_bottleneck, score=0.95)
+
+        return questions

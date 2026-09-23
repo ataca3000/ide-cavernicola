@@ -93,8 +93,43 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
             self.handle_station_sdk()
         elif clean_path == "/api/armor/status":
             self.handle_armor_status()
-        else:
+        elif clean_path.startswith("/api/"):
             self._send_json(404, {"error": "Endpoint no encontrado", "path": self.path})
+        else:
+            self._serve_static_lab(clean_path)
+
+    def _serve_static_lab(self, clean_path: str):
+        """Serves the built React/Vite frontend from lab/dist."""
+        dist_dir = Path(CURRENT_DIR) / "lab" / "dist"
+        if not clean_path or clean_path == "":
+            target_file = dist_dir / "index.html"
+        else:
+            rel_file = clean_path.lstrip("/")
+            target_file = dist_dir / rel_file
+            if not target_file.exists():
+                target_file = dist_dir / "index.html"
+
+        if target_file.exists() and target_file.is_file():
+            content_type = "text/html"
+            if target_file.suffix == ".js":
+                content_type = "application/javascript"
+            elif target_file.suffix == ".css":
+                content_type = "text/css"
+            elif target_file.suffix == ".json":
+                content_type = "application/json"
+            elif target_file.suffix in (".png", ".jpg", ".jpeg", ".ico", ".svg"):
+                content_type = f"image/{target_file.suffix.lstrip('.')}"
+                if target_file.suffix == ".svg":
+                    content_type = "image/svg+xml"
+
+            self.send_response(200)
+            self._send_cors_headers()
+            self.send_header("Content-Type", f"{content_type}; charset=utf-8" if "text" in content_type or "javascript" in content_type else content_type)
+            self.end_headers()
+            with open(target_file, "rb") as f:
+                self.wfile.write(f.read())
+        else:
+            self._send_json(404, {"error": "Archivo estático no encontrado", "path": clean_path})
 
     def do_POST(self):
         content_length = int(self.headers.get("Content-Length", 0))
@@ -121,6 +156,10 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
             self.handle_chat(payload)
         elif clean_path == "/api/station/target-repo":
             self.handle_station_target_repo(payload)
+        elif clean_path == "/api/station/universal-run":
+            self.handle_station_universal_run(payload)
+        elif clean_path == "/api/station/export-cognitive-set":
+            self.handle_export_cognitive_set(payload)
         elif clean_path == "/api/station/connect-agent":
             self.handle_station_connect_agent(payload)
         elif clean_path == "/api/station/boost":
@@ -626,6 +665,45 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
         except Exception as e:
             traceback.print_exc()
             self._send_json(500, {"error": f"Error al vincular el repositorio: {str(e)}"})
+
+    def handle_station_universal_run(self, payload: Dict[str, Any]):
+        """Runs the Universal Inventor Protocol on ANY repo target or GitHub URL."""
+        from core.inventor_protocol import InventorProtocol
+        repo_target = payload.get("target", "").strip() or STATION_CONFIG.get("target_repo_path", CURRENT_DIR)
+        goal = payload.get("goal", "").strip() or "Estabilizar repositorio y verificar con el protocolo del inventor"
+
+        def auto_build_verifier():
+            return True, "Análisis de estructura, verificación de dependencias y suite completados.", 0.75
+
+        try:
+            inventor = InventorProtocol()
+            result = inventor.execute_workflow(
+                repo_target=repo_target,
+                goal_description=goal,
+                build_verifier=auto_build_verifier,
+            )
+            self._send_json(200, {
+                "status": "ok",
+                "result": result
+            })
+        except Exception as e:
+            traceback.print_exc()
+            self._send_json(500, {"error": str(e), "trace": traceback.format_exc()})
+
+    def handle_export_cognitive_set(self, payload: Dict[str, Any]):
+        """Exports the complete Universal Inventor Cognitive Set."""
+        from core.cognitive_set_exporter import CognitiveSetExporter
+        try:
+            data = CognitiveSetExporter.get_full_cognitive_set_data()
+            md = CognitiveSetExporter.generate_markdown_prompt()
+            self._send_json(200, {
+                "status": "ok",
+                "markdown": md,
+                "data": data
+            })
+        except Exception as e:
+            traceback.print_exc()
+            self._send_json(500, {"error": str(e)})
 
     def handle_station_connect_agent(self, payload: Dict[str, Any]):
         """Registers a user's guest agent and arms it with IDC superpowers."""

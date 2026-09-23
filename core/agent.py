@@ -25,7 +25,15 @@ from core.purpose_filter import PurposeFilter
 from core.reinforcement_engine import ReinforcementEngine
 from core.sandbox import RealSandbox
 from core.simulation_engine import SimulationEngine
+from contracts.pulse import ReactionPulse, ReflexResponse
+from contracts.reality import DomainType
+from contracts.memory_library import CitableLogicalMemory, HypotheticalMemory
+from core.pulse_reaction_engine import PulseReactionEngine
+from core.reality_loader import RealityLoader
+from core.citable_memory_vault import CitableMemoryVault
+from core.mutant_action_engine import MutantActionEngine
 from plugins.llm import BaseLLMPlugin, GeminiPlugin
+
 
 
 class IDCAgent:
@@ -83,6 +91,15 @@ class IDCAgent:
 
         # Pre-warm in-memory indices so first cognitive cycle has zero cold-start I/O
         self.memory.warm_cache()
+
+        # Bio-Physical Perception-Reaction & Pluggable Reality Engines
+        vault_path = os.path.join(mem_path, "vault")
+        self.vault = CitableMemoryVault(base_dir=vault_path)
+        self.pulse_engine = PulseReactionEngine()
+        self.reality = RealityLoader()
+        self.reality.mount(DomainType.CYBERPHYSICAL)  # Standard environment default
+        self.mutant_engine = MutantActionEngine(self.vault, self.reality)
+
 
     def run_step(
         self,
@@ -414,3 +431,96 @@ class IDCAgent:
         self.state.energy = self.energy.available()
         self.state.active_rules = list(self._active_rules)
         return self.state
+
+    # ── Bio-Physical Reaction-Action & Pluggable Reality API ─────────────────
+
+    def process_pulse(self, pulse: ReactionPulse) -> ReflexResponse:
+        """
+        Processes real-time electrical/current or telemetry pulse in volatile RAM.
+        If critical threshold is breached, fires an immediate O(1) reflex action.
+        """
+        response = self.pulse_engine.receive_pulse(pulse)
+        if response.triggered and response.energy_cost > 0:
+            self.energy.consume(response.energy_cost)
+            self._sync_state()
+        return response
+
+    def mount_reality(self, domain_type: DomainType) -> bool:
+        """Mounts a reality domain (e.g. physics, thermodynamics, cyberphysical)."""
+        return self.reality.mount(domain_type)
+
+    def unmount_reality(self, domain_type: DomainType) -> bool:
+        """Unmounts an unneeded reality domain to prevent cognitive bloat."""
+        return self.reality.unmount(domain_type)
+
+    def generate_mutant_action(
+        self,
+        goal: Goal,
+        context: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Generates an adaptive decision through policy genome mutation,
+        blending citable memories under active reality domain laws.
+        """
+        return self.mutant_engine.generate_mutant_action(goal, context)
+
+    def promote_hypothesis_to_citable(
+        self,
+        hypothetical_id: str,
+        claim: str,
+        domain: str,
+        citation_source: str,
+        empirical_log: str,
+        conditions: Optional[List[str]] = None,
+        axioms: Optional[List[str]] = None,
+    ) -> CitableLogicalMemory:
+        """Promotes an empirically verified hypothesis into an immutable Citable Logical Memory."""
+        return self.vault.promote_to_citable(
+            hypothetical_id=hypothetical_id,
+            claim=claim,
+            domain=domain,
+            citation_source=citation_source,
+            empirical_log=empirical_log,
+            conditions=conditions,
+            axioms=axioms,
+        )
+
+    def analyze_first_principles(
+        self,
+        concept_or_behavior: str,
+        how_mechanism: Optional[str] = None,
+        why_cause: Optional[str] = None,
+        sub_layers: Optional[List[Dict[str, Any]]] = None,
+        material_structural_basis: Optional[List[str]] = None,
+        atomic_quantum_basis: Optional[List[str]] = None,
+        spacetime_props: Optional[Dict[str, Any]] = None,
+        reach_quantum: bool = False,
+        domain_type: str = "mecanico_o_computacional",
+    ):
+        """
+        Deconstructs any behavior or memory down to physical/material structural composition,
+        and into atomic, quantum superposition, observer frequency tuning,
+        dark matter background, and spacetime curvature of light particles in reality.
+        """
+        from core.first_principles_deconstructor import FirstPrinciplesDeconstructor
+        deconstructor = FirstPrinciplesDeconstructor()
+        if how_mechanism and why_cause:
+            return deconstructor.deconstruct(
+                system_behavior=concept_or_behavior,
+                how_it_works=how_mechanism,
+                why_it_works=why_cause,
+                sub_layers=sub_layers,
+                material_structural_basis=material_structural_basis,
+                atomic_quantum_basis=atomic_quantum_basis,
+                spacetime_props=spacetime_props,
+            )
+        if reach_quantum:
+            return deconstructor.analyze_to_atomic_and_quantum_depth(
+                target_concept=concept_or_behavior,
+                domain_type=domain_type,
+            )
+        return deconstructor.analyze_to_material_depth(
+            target_concept=concept_or_behavior,
+            domain_type=domain_type,
+        )
+
