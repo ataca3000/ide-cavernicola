@@ -27,6 +27,7 @@ from core.repo_analyzer import RepoAnalyzer
 from core.causal_engine import CausalEngine
 from core.curiosity_engine import CuriosityEngine
 from core.agent import IDCAgent
+from core.super_ia_armor import SuperIAArmor
 from contracts.goal import Goal
 
 # Global configurations
@@ -60,6 +61,7 @@ repo_analyzer = RepoAnalyzer(CURRENT_DIR)
 target_repo_analyzer = RepoAnalyzer(CURRENT_DIR)
 causal_engine = CausalEngine()
 curiosity_engine = CuriosityEngine()
+super_ia_armor = SuperIAArmor(initial_energy=2000.0, memory_manager=memory_mgr)
 
 
 class IDCBypassHandler(BaseHTTPRequestHandler):
@@ -89,6 +91,8 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
             self.handle_station_status()
         elif clean_path == "/api/station/sdk":
             self.handle_station_sdk()
+        elif clean_path == "/api/armor/status":
+            self.handle_armor_status()
         else:
             self._send_json(404, {"error": "Endpoint no encontrado", "path": self.path})
 
@@ -123,6 +127,18 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
             self.handle_station_boost(payload)
         elif clean_path == "/api/station/evolve":
             self.handle_station_evolve(payload)
+        elif clean_path == "/api/armor/pin-command":
+            self.handle_armor_pin_command(payload)
+        elif clean_path == "/api/armor/estop":
+            self.handle_armor_estop(payload)
+        elif clean_path == "/api/armor/harvest-entropy":
+            self.handle_armor_harvest_entropy(payload)
+        elif clean_path == "/api/armor/colmena-ping":
+            self.handle_armor_colmena_ping(payload)
+        elif clean_path == "/api/armor/toggle-node":
+            self.handle_armor_toggle_node(payload)
+        elif clean_path == "/api/armor/self-audit":
+            self.handle_armor_self_audit(payload)
         else:
             self._send_json(404, {"error": "Endpoint no encontrado", "path": self.path})
 
@@ -823,6 +839,70 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
                 "typescript": ts_snippet,
             }
         })
+
+    def handle_armor_status(self):
+        """Returns full telemetry of Super IA Armor and Colmena mesh."""
+        try:
+            telemetry = super_ia_armor.get_full_telemetry()
+            self._send_json(200, telemetry)
+        except Exception as e:
+            self._send_json(500, {"error": str(e), "trace": traceback.format_exc()})
+
+    def handle_armor_pin_command(self, payload: Dict[str, Any]):
+        """Applies Causal Invariant Pin Shield to hardware command."""
+        pin = int(payload.get("pin", 13))
+        value = int(payload.get("value", 0))
+        cmd_type = str(payload.get("type", "WRITE"))
+
+        try:
+            res = super_ia_armor.validate_pin_command(pin, value, cmd_type)
+            self._send_json(200, res)
+        except Exception as e:
+            self._send_json(500, {"error": str(e), "trace": traceback.format_exc()})
+
+    def handle_armor_estop(self, payload: Dict[str, Any]):
+        """Sets or resets emergency stop."""
+        active = bool(payload.get("active", True))
+        try:
+            res = super_ia_armor.set_estop(active)
+            self._send_json(200, res)
+        except Exception as e:
+            self._send_json(500, {"error": str(e), "trace": traceback.format_exc()})
+
+    def handle_armor_harvest_entropy(self, payload: Dict[str, Any]):
+        """Harvests authentic hardware entropy without token cost."""
+        try:
+            res = super_ia_armor.harvest_hardware_entropy()
+            self._send_json(200, res)
+        except Exception as e:
+            self._send_json(500, {"error": str(e), "trace": traceback.format_exc()})
+
+    def handle_armor_colmena_ping(self, payload: Dict[str, Any]):
+        """Pings mesh route between Colmena nodes."""
+        origin = payload.get("origin", "IDC_BRAIN")
+        dest = payload.get("destination", "BUNKKER_BOX")
+        try:
+            res = super_ia_armor.colmena_ping_mesh(origin, dest)
+            self._send_json(200, res)
+        except Exception as e:
+            self._send_json(500, {"error": str(e), "trace": traceback.format_exc()})
+
+    def handle_armor_toggle_node(self, payload: Dict[str, Any]):
+        """Toggles a Colmena node status for resilience testing."""
+        node_id = payload.get("node_id", "")
+        try:
+            res = super_ia_armor.toggle_node_status(node_id)
+            self._send_json(200, res)
+        except Exception as e:
+            self._send_json(500, {"error": str(e), "trace": traceback.format_exc()})
+
+    def handle_armor_self_audit(self, payload: Dict[str, Any]):
+        """Executes a system self-audit and invariant verification pass."""
+        try:
+            res = super_ia_armor.run_self_audit()
+            self._send_json(200, res)
+        except Exception as e:
+            self._send_json(500, {"error": str(e), "trace": traceback.format_exc()})
 
 
 def run_server(port: int = 8000):

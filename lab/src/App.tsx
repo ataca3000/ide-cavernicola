@@ -12,6 +12,7 @@ import { MissionHub } from './components/MissionHub';
 import { RealResultsViewer } from './components/RealResultsViewer';
 import { CognitiveChatBar } from './components/CognitiveChatBar';
 import { AgentBoosterStation } from './components/AgentBoosterStation';
+import { CyberphysicalColmenaPanel } from './components/CyberphysicalColmenaPanel';
 
 export const App: React.FC = () => {
   // Engines instances kept across renders
@@ -21,7 +22,7 @@ export const App: React.FC = () => {
   // Simulation execution state
   const [isRunning, setIsRunning] = useState<boolean>(true);
   const [speed, setSpeed] = useState<number>(1);
-  const [activeTab, setActiveTab] = useState<'sim' | 'booster' | 'translation'>('sim');
+  const [activeTab, setActiveTab] = useState<'sim' | 'booster' | 'cyberphysical' | 'translation'>('sim');
 
   // Server & API Configuration State
   const [serverUrl, setServerUrl] = useState<string>('http://127.0.0.1:8000');
@@ -232,6 +233,14 @@ export const App: React.FC = () => {
         </button>
 
         <button
+          className={`tab-nav-btn ${activeTab === 'cyberphysical' ? 'active' : ''}`}
+          onClick={() => setActiveTab('cyberphysical')}
+        >
+          <span className="tab-icon">🔌</span>
+          <span>CIBERFÍSICO & COLMENA B3B</span>
+        </button>
+
+        <button
           className={`tab-nav-btn ${activeTab === 'translation' ? 'active' : ''}`}
           onClick={() => setActiveTab('translation')}
         >
@@ -315,6 +324,18 @@ export const App: React.FC = () => {
               agent.addLog('ACTION', `Inyectando superpoder cognitivo al agente huésped: ${title}`, true);
               const ag = world.getAgent();
               agent.addFloatingText(ag.x, ag.y, 'Superpoder IDC ⚡', '#38bdf8');
+              setTick((t) => t + 1);
+            }}
+          />
+        ) : activeTab === 'cyberphysical' ? (
+          <CyberphysicalColmenaPanel
+            serverUrl={serverUrl}
+            serverStatus={serverStatus}
+            onInjectActionInWorld={(actionTitle) => {
+              agent.setGoal(`[HARDWARE] ${actionTitle}`);
+              agent.addLog('ACTION', `Interacción ciberfísica enviada: ${actionTitle}`, true);
+              const ag = world.getAgent();
+              agent.addFloatingText(ag.x, ag.y, 'Ciberfísico 🔌', '#10b981');
               setTick((t) => t + 1);
             }}
           />
