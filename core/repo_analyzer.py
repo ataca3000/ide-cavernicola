@@ -22,6 +22,7 @@ class RepoAnalyzer:
     def __init__(self, repo_root: Optional[str] = None):
         base_dir = repo_root or os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         self.repo_root = Path(base_dir)
+        self._cached_summary: Optional[Dict[str, Any]] = None
 
     def scan_ast(self) -> Dict[str, Any]:
         """
@@ -192,10 +193,14 @@ class RepoAnalyzer:
 
         return workflows
 
-    def generate_repository_summary(self) -> Dict[str, Any]:
+    def generate_repository_summary(self, force_refresh: bool = False) -> Dict[str, Any]:
         """
         Constructs a complete semantic overview of the codebase across all languages.
+        Caches the result in memory for zero-latency subsequent calls.
         """
+        if self._cached_summary is not None and not force_refresh:
+            return self._cached_summary
+
         ast_data = self.scan_ast()
         debt_data = self.scan_technical_debt()
         ci_data = self.scan_ci_workflows()
@@ -204,7 +209,7 @@ class RepoAnalyzer:
         py_loc = sum(m["lines_of_code"] for m in ast_data["modules"].values())
         total_loc = max(source_data["total_loc"], py_loc)
 
-        return {
+        summary = {
             "repository_root": str(self.repo_root),
             "repository_name": self.repo_root.name or "Repo Objetivo",
             "metrics": {
@@ -221,6 +226,8 @@ class RepoAnalyzer:
             "technical_debt": debt_data,
             "ci_workflows": ci_data,
         }
+        self._cached_summary = summary
+        return summary
 
     def diagnose_with_llm(
         self,
