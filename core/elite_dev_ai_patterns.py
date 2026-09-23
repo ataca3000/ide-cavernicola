@@ -296,6 +296,56 @@ class EliteDevAIPatternsRegistry:
         )
         catalog["pguso_microsoft_agents_from_scratch"] = agents_scratch
 
+        # ── 6. IDC Inventor: Universal Inventor Driven Cognition ───────────────
+        idc_inventor = TopDevAIRepository(
+            repo_name_or_source="IDC (Inventor Driven Cognition) - Universal Cognitive Set",
+            authors_or_maintainers="El Creador de IDC (Inventor Cavernícola)",
+            url_or_reference="https://github.com/ataca3000/ide-cavernicola",
+            core_paradigm="Curiosidad obtenida por experiencia y comprensión del entorno (Deconstrucción causal profunda, Make vs Buy y NUNCA PARAR)",
+            inspirational_axiom="Rechaza el futurismo en papel. La única verdad es la prueba de fuego de 8 a 12 horas continuas sin calentarse (>75°C), sin atascos y salvando el motor con piezas de sacrificio. Si lo pasa: ¡ESTÁ CON MADRE!",
+            key_techniques=[
+                DeveloperAITechnique(
+                    name="Deconstrucción Recursiva de Primeros Principios",
+                    category="razonamiento",
+                    description="Descomponer cualquier comportamiento o sistema preguntando obligatoriamente CÓMO y POR QUÉ capa por capa hasta llegar a la microestructura cristalina del material, la dislocación o la física cuántica.",
+                    algorithmic_steps=[
+                        "1. Observar el comportamiento macroscópico observable.",
+                        "2. Preguntar: ¿CÓMO transfiere la energía o información el submecanismo?",
+                        "3. Preguntar: ¿POR QUÉ ocurre el fenómeno a nivel interfacial o de contacto?",
+                        "4. Descender hasta la composición estructural del material aplicado (límite de fatiga, tensión de corte, dopaje)."
+                    ],
+                    when_to_use="Al analizar cualquier falla, cuello de botella o al diseñar una nueva arquitectura.",
+                    pitfalls_to_avoid="Quedarse en la superficie teórica o asumir que algo funciona solo porque se ve bien en pantalla."
+                ),
+                DeveloperAITechnique(
+                    name="Génesis Causal del «¿Y SI...?» (Curiosidad Pragmática)",
+                    category="razonamiento",
+                    description="La curiosidad no es ruido aleatorio ni un dado al azar; es la pregunta disruptiva que nace exclusivamente de haber entendido la estructura del material y saber lo que ya falló en el taller ('así no').",
+                    algorithmic_steps=[
+                        "1. Localizar el punto de máximo esfuerzo o desgaste.",
+                        "2. Cruzar con el catálogo de fallas previas (Causal Trash) para no repetir errores.",
+                        "3. Disparar mutaciones morfológicas: ¿Y si usamos tubo troquelado en vez de barra maciza? ¿Y si ponemos rodillos encontrados?",
+                        "4. Probar en sandbox antes de cortar el primer fierro."
+                    ],
+                    when_to_use="Para generar innovación radical sin alucinaciones físicas.",
+                    pitfalls_to_avoid="Proponer ideas que violan la conservación de energía o la termodinámica."
+                ),
+                DeveloperAITechnique(
+                    name="Ecuación del Desgaste y Fusibles de Sacrificio (NUNCA PARAR)",
+                    category="harness_memoria",
+                    description="El desgaste es trabajo sobre tiempo (W/t). Diseñar siempre componentes de bajo costo para absorber el impacto y proteger el componente principal o motor.",
+                    algorithmic_steps=[
+                        "1. Identificar el punto crítico de fricción.",
+                        "2. Colocar una pieza de sacrificio económica (buje blando, tornillo fusible, acople elástico).",
+                        "3. Si la pieza cede, el sistema no colapsa: se reemplaza el fusible y se sigue operando."
+                    ],
+                    when_to_use="Tanto en transmisiones mecánicas de taller como en arquitecturas de software tolerantes a fallos.",
+                    pitfalls_to_avoid="Hacer todo el sistema rígido y macizo, provocando la rotura del motor ante una sobrecarga."
+                )
+            ]
+        )
+        catalog["idc_inventor_universal_cognition"] = idc_inventor
+
         return catalog
 
     def get_all_repositories(self) -> List[TopDevAIRepository]:

@@ -25,6 +25,7 @@ def test_top_5_repositories_catalog_integrity():
     assert "dair_prompt_engineering_guide" in keys
     assert "karpathy_software20_llm_os" in keys
     assert "pguso_microsoft_agents_from_scratch" in keys
+    assert "idc_inventor_universal_cognition" in keys
 
     # Verify Anthropic
     anthropic = registry.get_repository("anthropic_building_effective_agents")

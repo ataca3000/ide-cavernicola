@@ -160,6 +160,8 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
             self.handle_station_universal_run(payload)
         elif clean_path == "/api/station/export-cognitive-set":
             self.handle_export_cognitive_set(payload)
+        elif clean_path == "/api/station/audit-archive":
+            self.handle_station_audit_archive(payload)
         elif clean_path == "/api/station/connect-agent":
             self.handle_station_connect_agent(payload)
         elif clean_path == "/api/station/boost":
@@ -704,6 +706,34 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
         except Exception as e:
             traceback.print_exc()
             self._send_json(500, {"error": str(e)})
+
+    def handle_station_audit_archive(self, payload: Dict[str, Any]):
+        """Unpacks and audits any ZIP, RAR, Tar, folder, raw code or dataset."""
+        from core.universal_archive_loader import UniversalArchiveLoader
+        source_path = payload.get("source_path", "").strip() or payload.get("path", "").strip()
+        goal = payload.get("goal", "")
+        budget = float(payload.get("budget_usd", 100.0))
+        scale = int(payload.get("scale_units", 1))
+
+        if not source_path:
+            self._send_json(400, {"error": "Se requiere 'source_path' o 'path' hacia el archivo .zip, .rar, carpeta o dataset."})
+            return
+
+        try:
+            loader = UniversalArchiveLoader()
+            recommendation = loader.audit_and_recommend(
+                source_path=source_path,
+                goal_or_query=goal,
+                custom_budget_usd=budget,
+                expected_units_scale=scale
+            )
+            self._send_json(200, {
+                "status": "ok",
+                "recommendation": recommendation.dict()
+            })
+        except Exception as e:
+            traceback.print_exc()
+            self._send_json(500, {"error": str(e), "trace": traceback.format_exc()})
 
     def handle_station_connect_agent(self, payload: Dict[str, Any]):
         """Registers a user's guest agent and arms it with IDC superpowers."""
