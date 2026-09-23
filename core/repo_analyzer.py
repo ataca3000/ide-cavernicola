@@ -96,12 +96,16 @@ class RepoAnalyzer:
         pattern = re.compile(r"\b(TODO|FIXME|HACK|BUG|OPTIMIZE|DEPRECATED)\b[:\s-]*(.*)", re.IGNORECASE)
         ignore_dirs = {".venv", "venv", "env", "__pycache__", ".git", "build", "dist", "node_modules", ".next"}
 
+        ignore_files = {"package-lock.json", "pnpm-lock.yaml", "yarn.lock", "Cargo.lock", "poetry.lock"}
+
         for file_path in self.repo_root.rglob("*.*"):
             if any(ignored in file_path.parts for ignored in ignore_dirs):
                 continue
+            if file_path.name in ignore_files:
+                continue
             if file_path.suffix not in {
                 ".py", ".ts", ".tsx", ".js", ".jsx", ".md", ".yml", ".yaml", 
-                ".toml", ".json", ".go", ".rs", ".java", ".cpp", ".c", ".h"
+                ".toml", ".go", ".rs", ".java", ".cpp", ".c", ".h"
             }:
                 continue
 
