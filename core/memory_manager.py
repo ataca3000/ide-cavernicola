@@ -37,7 +37,13 @@ class MemoryManager:
 
     def __init__(self, base_dir: Optional[str] = None):
         if base_dir is None:
-            base_dir = str(Path(__file__).parent.parent / "memory")
+            env_storage = os.environ.get("VERCEL_STORAGE_DIR") or os.environ.get("IDC_STORAGE_DIR")
+            if env_storage:
+                base_dir = env_storage
+            elif os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+                base_dir = "/tmp/memory"
+            else:
+                base_dir = str(Path(__file__).parent.parent / "memory")
         self.base_dir = Path(base_dir)
         self.short_term_dir = self.base_dir / "short_term"
         self.episodic_dir = self.base_dir / "episodic"

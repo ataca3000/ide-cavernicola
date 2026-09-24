@@ -93,6 +93,8 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
             self.handle_station_sdk()
         elif clean_path == "/api/armor/status":
             self.handle_armor_status()
+        elif clean_path == "/api/github/status":
+            self.handle_github_status()
         elif clean_path.startswith("/api/"):
             self._send_json(404, {"error": "Endpoint no encontrado", "path": self.path})
         else:
@@ -183,13 +185,28 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
         else:
             self._send_json(404, {"error": "Endpoint no encontrado", "path": self.path})
 
+    def handle_github_status(self):
+        """Returns GitHub connection health and recent commits."""
+        try:
+            from core.github_connector import GitHubConnector
+            connector = GitHubConnector()
+            status = connector.check_connection()
+            commits = connector.get_latest_commits(limit=5)
+            self._send_json(200, {
+                "status": "ok",
+                "github": status,
+                "recent_commits": commits
+            })
+        except Exception as e:
+            self._send_json(500, {"error": str(e)})
+
     def handle_status(self):
         """Returns engine status, database counts, and system metrics."""
         try:
             rules = memory_mgr.list_causal_rules()
             trash = memory_mgr.get_rejected_list()
 
-            db_path = Path(CURRENT_DIR) / "memory" / "idc.db"
+            db_path = memory_mgr.base_dir / "idc.db"
             db_summary = {}
             if db_path.exists():
                 try:
@@ -298,7 +315,7 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
         """Audits SQLite memory and causal rules."""
         rules = memory_mgr.list_causal_rules()
         trash = memory_mgr.get_rejected_list()
-        db_path = Path(CURRENT_DIR) / "memory" / "idc.db"
+        db_path = memory_mgr.base_dir / "idc.db"
         db_stats = {}
         if db_path.exists():
             try:
