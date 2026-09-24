@@ -1013,12 +1013,14 @@ class IDCBypassHandler(BaseHTTPRequestHandler):
             self._send_json(500, {"error": str(e), "trace": traceback.format_exc()})
 
 
-def run_server(port: int = 8000):
-    server_address = ("127.0.0.1", port)
+def run_server(port: Optional[int] = None, host: Optional[str] = None):
+    host_addr = host or os.environ.get("HOST", "0.0.0.0")
+    port_num = port or int(os.environ.get("PORT", "8000"))
+    server_address = (host_addr, port_num)
     httpd = HTTPServer(server_address, IDCBypassHandler)
-    print(f"[*] Servidor Puente Local IDC escuchando en http://127.0.0.1:{port}")
+    print(f"[*] Servidor IDC escuchando en http://{host_addr}:{port_num}")
     httpd.serve_forever()
 
 
 if __name__ == "__main__":
-    run_server(8000)
+    run_server()
