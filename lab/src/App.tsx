@@ -25,7 +25,13 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'sim' | 'booster' | 'cyberphysical' | 'translation'>('sim');
 
   // Server & API Configuration State
-  const [serverUrl, setServerUrl] = useState<string>('http://127.0.0.1:8000');
+  const [serverUrl, setServerUrl] = useState<string>(() => {
+    return (
+      localStorage.getItem('idc_server_url') ||
+      import.meta.env.VITE_API_URL ||
+      'http://127.0.0.1:8000'
+    );
+  });
   const [geminiKey, setGeminiKey] = useState<string>('');
   const [serverStatus, setServerStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [serverDetails, setServerDetails] = useState<any>(null);
@@ -174,9 +180,11 @@ export const App: React.FC = () => {
   };
 
   const handleSaveConfig = async (newUrl: string, newKey: string, newMode: string) => {
-    setServerUrl(newUrl);
+    const cleanUrl = newUrl.replace(/\/$/, '');
+    setServerUrl(cleanUrl);
+    localStorage.setItem('idc_server_url', cleanUrl);
     setGeminiKey(newKey);
-    const targetUrl = newUrl.replace(/\/$/, '');
+    const targetUrl = cleanUrl;
 
     try {
       await fetch(`${targetUrl}/api/config`, {
