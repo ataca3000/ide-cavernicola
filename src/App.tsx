@@ -26,11 +26,13 @@ export const App: React.FC = () => {
 
   // Server & API Configuration State
   const [serverUrl, setServerUrl] = useState<string>(() => {
-    return (
-      localStorage.getItem('idc_server_url') ||
-      import.meta.env.VITE_API_URL ||
-      'http://127.0.0.1:8000'
-    );
+    const saved = localStorage.getItem('idc_server_url');
+    if (saved) return saved;
+    if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return '';
+    }
+    return 'http://127.0.0.1:8000';
   });
   const [geminiKey, setGeminiKey] = useState<string>('');
   const [serverStatus, setServerStatus] = useState<'online' | 'offline' | 'checking'>('checking');
