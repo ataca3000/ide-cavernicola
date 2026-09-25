@@ -43,7 +43,7 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({
     <div className="world-canvas-container">
       <div className="world-header-toolbar">
         <div className="world-title">
-          <span className="tab-pill active">🏔️ GLACIAR 20x20</span>
+          <span className="tab-pill active">MALLA OPERATIVA 20x20</span>
           <span className="coords-info">
             Posición: ({agentEntity.x}, {agentEntity.y})
           </span>
@@ -130,11 +130,11 @@ export const WorldCanvas: React.FC<WorldCanvasProps> = ({
       </div>
 
       <div className="world-legend">
-        <span>🧔 El Cavernícola (Agente IDC)</span>
-        <span>🐺 Lobo (Peligro)</span>
-        <span>🔥 Hoguera (Sanación)</span>
-        <span>🍖 Alimento (+Energía)</span>
-        <span>🦴 Restos (Trauma)</span>
+        <span>Agente Centynel (núcleo operativo)</span>
+        <span>Riesgo detectado</span>
+        <span>Punto de recuperación</span>
+        <span>Recurso disponible</span>
+        <span>Incidente registrado</span>
         <span>🪨 Rocas / 🌲 Árboles</span>
       </div>
     </div>

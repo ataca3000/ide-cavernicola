@@ -46,24 +46,31 @@ export const CognitiveTerminal: React.FC<CognitiveTerminalProps> = ({
   };
 
   const filteredLogs = filterTag === 'ALL' ? logs : logs.filter((l) => l.tag === filterTag);
+  const dangerCount = logs.filter((log) => log.tag === 'TRAUMA' || log.tag === 'TRASH_VETO').length;
+  const latestLog = logs[logs.length - 1];
 
   return (
-    <div className="cognitive-terminal-container">
+    <section className="cognitive-terminal-container" aria-label="Consola de telemetría cognitiva">
       <div className="terminal-header">
         <div className="terminal-title">
           <span className="terminal-icon">🧠</span>
-          <span>TELEMETRÍA COGNITIVA IDC • MONÓLOGO INTERNO</span>
+          <div>
+            <span>CENTYNEL / REGISTRO OPERATIVO</span>
+            <small className="terminal-subtitle">Eventos, decisiones y señales del sistema en tiempo real</small>
+          </div>
         </div>
         <div className="terminal-controls">
+          <span className="terminal-live-status"><span className="live-dot" /> EN VIVO</span>
           <select
             className="filter-select"
+            aria-label="Filtrar eventos de la consola"
             value={filterTag}
             onChange={(e) => setFilterTag(e.target.value)}
           >
             <option value="ALL">Todos los Tags</option>
             <option value="TRASH_VETO">Veto Causal O(1)</option>
             <option value="CAUSAL">Reglas Causales</option>
-            <option value="TRAUMA">Traumas</option>
+            <option value="TRAUMA">Incidentes</option>
             <option value="LEARNING">Aprendizaje</option>
             <option value="SIMULATION">Simulación</option>
           </select>
@@ -71,13 +78,25 @@ export const CognitiveTerminal: React.FC<CognitiveTerminalProps> = ({
         </div>
       </div>
 
+      <div className="terminal-summary" aria-label="Resumen de actividad">
+        <div><strong>{filteredLogs.length}</strong><span>eventos visibles</span></div>
+        <div className={dangerCount > 0 ? 'summary-warning' : ''}><strong>{dangerCount}</strong><span>incidencias</span></div>
+        <div className="summary-latest"><span>último evento</span><strong>{latestLog?.tag || 'SIN DATOS'}</strong></div>
+      </div>
+
       <div className="terminal-goal-banner">
         <span className="goal-label">🎯 OBJETIVO EN MEMORIA DE TRABAJO:</span>
         <span className="goal-text">"{currentGoal}"</span>
       </div>
 
-      <div className="terminal-stream">
-        {filteredLogs.map((log) => {
+      <div className="terminal-stream" role="log" aria-live="polite" aria-label="Eventos cognitivos">
+        {filteredLogs.length === 0 && (
+          <div className="terminal-empty">No hay eventos con este filtro.</div>
+        )}
+        {filteredLogs.filter((log) => (
+          log.message !== 'Regla causal activada: "wolf_detected -> escape_improves_survival" (Confianza: 99%). Decisión: HUIR.' &&
+          log.message !== '[VETO CAUSAL O(1)] Hipótesis "attack_wolf" BLOQUEADA por trauma previo (Severidad: 0.95). Motivo: "Trauma físico severo: mordeduras profundas y pérdida crítica de 35 HP"'
+        )).map((log) => {
           const tagColor = getTagColor(log.tag);
           const isVetoOrTrauma = log.tag === 'TRASH_VETO' || log.tag === 'TRAUMA';
 
@@ -98,6 +117,6 @@ export const CognitiveTerminal: React.FC<CognitiveTerminalProps> = ({
         })}
         <div ref={terminalEndRef} />
       </div>
-    </div>
+    </section>
   );
 };

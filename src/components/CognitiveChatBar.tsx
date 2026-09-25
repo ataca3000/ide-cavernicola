@@ -35,7 +35,7 @@ export const CognitiveChatBar: React.FC<CognitiveChatBarProps> = ({
     {
       id: 'welcome',
       sender: 'cavernicola',
-      text: '¡Saludos! Soy el Cavernícola de IDC. Velo por la supervivencia y evolución de nuestro código. Puedes preguntarme sobre la arquitectura de este repositorio, pedirme que analice la deuda técnica o consultar qué herramientas externas conviene conectar.',
+      text: 'Soy Centynel, tu centro de inteligencia operativa. Puedo explicar la arquitectura del repositorio, detectar deuda técnica y recomendar integraciones con trazabilidad.',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -121,7 +121,7 @@ export const CognitiveChatBar: React.FC<CognitiveChatBarProps> = ({
         <div className="chat-title-group">
           <span className="chat-avatar-icon">🧔</span>
           <div>
-            <h5>DIÁLOGO CON EL CAVERNÍCOLA IDC</h5>
+            <h5>CENTRO DE CONSULTA CENTYNEL</h5>
             <span className="chat-sub">Mente Artificial &amp; Propuestas Evolutivas de Código</span>
           </div>
         </div>
@@ -235,7 +235,7 @@ export const CognitiveChatBar: React.FC<CognitiveChatBarProps> = ({
                 <div className="bubble-content-wrap">
                   <div className="bubble-typing">
                     <span></span><span></span><span></span>
-                    <em>El cavernícola está analizando la topología del repo y sintetizando...</em>
+                    <em>Centynel está analizando la topología del repositorio y sintetizando una respuesta...</em>
                   </div>
                 </div>
               </div>
@@ -272,7 +272,7 @@ export const CognitiveChatBar: React.FC<CognitiveChatBarProps> = ({
               className="chat-text-input"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Habla con el cavernícola (ej: '¿Qué mejoras evolutivas recomiendas para este repo?')..."
+              placeholder="Consulta a Centynel (ej: '¿Qué riesgos y mejoras recomiendas para este repositorio?')..."
               disabled={isSending}
             />
             <button

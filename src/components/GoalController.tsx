@@ -26,7 +26,7 @@ export const GoalController: React.FC<GoalControllerProps> = ({ currentGoal, onS
   return (
     <div className="goal-controller-card">
       <div className="goal-header">
-        <span className="goal-title">🎯 CONTROLADOR DE PROPÓSITO (IDC PURPOSE FILTER)</span>
+        <span className="goal-title">🎯 CONTROLADOR DE OBJETIVOS Y PRIORIDADES</span>
         <span className="info-chip">Reconfiguración en Caliente</span>
       </div>
 
@@ -34,12 +34,12 @@ export const GoalController: React.FC<GoalControllerProps> = ({ currentGoal, onS
         <input
           type="text"
           className="goal-input"
-          placeholder="Escribe un objetivo para el cavernícola (ej: 'Construir Refugio')..."
+          placeholder="Define un objetivo operativo (ej: 'Reducir deuda técnica')..."
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
         />
         <button type="submit" className="btn-set-goal">
-          Fijar Propósito
+          Aplicar objetivo
         </button>
       </form>
 

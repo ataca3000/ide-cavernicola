@@ -28,9 +28,9 @@ export const MissionHub: React.FC<MissionHubProps> = ({
         <div className="hub-title-row">
           <span className="hub-icon">🚀</span>
           <div>
-            <h4>CENTRO DE MISIONES Y PRUEBAS REALES IDC</h4>
+            <h4>CENTRO DE OPERACIONES Y PRUEBAS REALES</h4>
             <span className="hub-sub">
-              El juego 2D refleja la simulación mientras IDC ejecuta la tarea real en tu máquina.
+              La vista operativa refleja el estado mientras Centynel ejecuta la tarea real en tu entorno.
             </span>
           </div>
         </div>
@@ -112,7 +112,7 @@ export const MissionHub: React.FC<MissionHubProps> = ({
             className="btn-launch-mission"
             disabled={isRunningMission || !customPrompt.trim()}
           >
-            {isRunningMission ? 'Ejecutando...' : 'Lanzar a IDC ➔'}
+            {isRunningMission ? 'Ejecutando...' : 'Ejecutar en Centynel'}
           </button>
         </div>
       </form>
