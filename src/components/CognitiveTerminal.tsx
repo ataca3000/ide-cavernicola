@@ -55,8 +55,8 @@ export const CognitiveTerminal: React.FC<CognitiveTerminalProps> = ({
         <div className="terminal-title">
           <span className="terminal-icon">🧠</span>
           <div>
-            <span>TELEMETRÍA COGNITIVA IDC</span>
-            <small className="terminal-subtitle">Registro operativo en tiempo real</small>
+            <span>CENTYNEL / REGISTRO OPERATIVO</span>
+            <small className="terminal-subtitle">Eventos, decisiones y señales del sistema en tiempo real</small>
           </div>
         </div>
         <div className="terminal-controls">
@@ -70,7 +70,7 @@ export const CognitiveTerminal: React.FC<CognitiveTerminalProps> = ({
             <option value="ALL">Todos los Tags</option>
             <option value="TRASH_VETO">Veto Causal O(1)</option>
             <option value="CAUSAL">Reglas Causales</option>
-            <option value="TRAUMA">Traumas</option>
+            <option value="TRAUMA">Incidentes</option>
             <option value="LEARNING">Aprendizaje</option>
             <option value="SIMULATION">Simulación</option>
           </select>

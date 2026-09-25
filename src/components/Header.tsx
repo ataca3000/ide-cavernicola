@@ -51,16 +51,16 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="idc-header">
       <div className="header-left">
-        <div className="logo-box" title="El Cavernícola IDC">
-          <span className="logo-icon">🧔</span>
+        <div className="logo-box" title="Centynel — Centro de Inteligencia Operativa">
+          <span className="logo-mark" aria-hidden="true">C</span>
         </div>
         <div className="title-group">
           <div className="title-row">
-            <h1>IDC cavernícola</h1>
-            <span className="subtitle-pill">Watch a Caveman Learn to Survive</span>
+            <h1>CENTYNEL</h1>
+            <span className="subtitle-pill">Centro de Inteligencia Operativa</span>
           </div>
           <p className="subtitle-desc">
-            Simulador del Cavernícola IDC en la Era Glaciar • Memoria Causal &amp; Supervivencia Autónoma
+            Supervisión de agentes, memoria causal y operaciones autónomas en un solo centro de control
           </p>
         </div>
       </div>
@@ -145,11 +145,11 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         <button className="btn-control btn-spawn" onClick={onSpawnWolf} title="Inyectar amenaza">
-          +🐺 Lobo
+          + Riesgo
         </button>
 
         <button className="btn-control btn-spawn" onClick={onSpawnFood} title="Colocar recurso">
-          +🍖 Comida
+          + Recurso
         </button>
 
         <button className="btn-control btn-reset" onClick={onReset} title="Reiniciar memoria y estado">

@@ -230,32 +230,32 @@ export const App: React.FC = () => {
           className={`tab-nav-btn ${activeTab === 'sim' ? 'active' : ''}`}
           onClick={() => setActiveTab('sim')}
         >
-          <span className="tab-icon">🧔</span>
-          <span>SIMULACIÓN DEL CAVERNÍCOLA IDC</span>
+          <span className="tab-icon" aria-hidden="true">01</span>
+          <span>MONITOR DE OPERACIONES</span>
         </button>
 
         <button
           className={`tab-nav-btn ${activeTab === 'booster' ? 'active' : ''}`}
           onClick={() => setActiveTab('booster')}
         >
-          <span className="tab-icon">⚡</span>
-          <span>ESTACIÓN DE SUPERPODERES (BYOA)</span>
+          <span className="tab-icon" aria-hidden="true">02</span>
+          <span>ACELERADORES DE AGENTES</span>
         </button>
 
         <button
           className={`tab-nav-btn ${activeTab === 'cyberphysical' ? 'active' : ''}`}
           onClick={() => setActiveTab('cyberphysical')}
         >
-          <span className="tab-icon">🔌</span>
-          <span>CIBERFÍSICO & COLMENA B3B</span>
+          <span className="tab-icon" aria-hidden="true">03</span>
+          <span>INFRAESTRUCTURA Y RED</span>
         </button>
 
         <button
           className={`tab-nav-btn ${activeTab === 'translation' ? 'active' : ''}`}
           onClick={() => setActiveTab('translation')}
         >
-          <span className="tab-icon">📖</span>
-          <span>TRADUCCIÓN COGNITIVA IDC</span>
+          <span className="tab-icon" aria-hidden="true">04</span>
+          <span>MODELO DE DECISIÓN</span>
         </button>
 
         <div className="tab-spacer"></div>
@@ -265,7 +265,7 @@ export const App: React.FC = () => {
           onClick={() => setIsSettingsOpen(true)}
           title="Configurar conexión del Agente / API Key"
         >
-          ⚙️ Servidor: <strong style={{ color: serverStatus === 'online' ? '#10b981' : '#ef4444' }}>
+          Servidor: <strong style={{ color: serverStatus === 'online' ? '#10b981' : '#ef4444' }}>
             {serverStatus === 'online' ? 'Online' : 'Offline'}
           </strong>
         </button>
@@ -352,7 +352,7 @@ export const App: React.FC = () => {
         ) : (
           /* Translation / Architectural View */
           <div className="translation-view-card">
-            <h2>Mapeo de Capas Cognitivas de IDC en el Laboratorio</h2>
+            <h2>Arquitectura de decisión de Centynel</h2>
             <div className="translation-grid">
               <div className="trans-card">
                 <h3>Tipo 1: Memoria Episódica</h3>
