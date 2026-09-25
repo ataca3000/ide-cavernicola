@@ -73,35 +73,12 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="gear-icon">⚙</span>
         </div>
 
-        {/* Metabolic Energy Bar */}
-        <div className="metric-badge energy-badge" style={{ borderColor: getEnergyColor(energy) }}>
-          <span className="energy-icon">⚡</span>
-          <div className="energy-info">
-            <span className="energy-label">Energía:</span>
-            <span className="energy-value" style={{ color: getEnergyColor(energy) }}>
-              {energy}%
-            </span>
-          </div>
-          <div className="energy-track">
-            <div
-              className="energy-fill"
-              style={{
-                width: `${energy}%`,
-                backgroundColor: getEnergyColor(energy),
-              }}
-            ></div>
-          </div>
-        </div>
-
         {/* Health */}
-        <div className="metric-badge hp-badge">
-          <span>❤️ Salud: {hp}%</span>
-        </div>
+        <div className="metric-badge hp-badge"></div>
 
         {/* Mode Pill */}
         <div className={`metric-badge mode-badge mode-${mode.toLowerCase()}`}>
           <span className="mode-dot"></span>
-          <span>Modo: {mode}</span>
         </div>
 
         {/* Day/Night */}
@@ -143,10 +120,6 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           ))}
         </div>
-
-        <button className="btn-control btn-spawn" onClick={onSpawnWolf} title="Inyectar amenaza">
-          + Riesgo
-        </button>
 
         <button className="btn-control btn-spawn" onClick={onSpawnFood} title="Colocar recurso">
           + Recurso
