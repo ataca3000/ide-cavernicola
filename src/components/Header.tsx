@@ -2,52 +2,32 @@ import React from 'react';
 import { AgentMode } from '../engine/types';
 
 interface HeaderProps {
-  energy: number;
-  hp: number;
   mode: AgentMode;
   isRunning: boolean;
   speed: number;
-  dayCycle: 'day' | 'dusk' | 'night';
   stepCount: number;
   curiosityIndex: number;
   onTogglePlay: () => void;
   onStep: () => void;
   onSetSpeed: (speed: number) => void;
   onReset: () => void;
-  onSpawnWolf: () => void;
   onSpawnFood: () => void;
   onOpenSettings: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  energy,
-  hp,
   mode,
   isRunning,
   speed,
-  dayCycle,
   stepCount,
   curiosityIndex,
   onTogglePlay,
   onStep,
   onSetSpeed,
   onReset,
-  onSpawnWolf,
   onSpawnFood,
   onOpenSettings,
 }) => {
-  const getEnergyColor = (val: number) => {
-    if (val > 60) return '#10b981';
-    if (val > 25) return '#f59e0b';
-    return '#ef4444';
-  };
-
-  const getDayIcon = () => {
-    if (dayCycle === 'day') return '☀️ Día';
-    if (dayCycle === 'dusk') return '🌅 Atardecer';
-    return '🌙 Noche Helada';
-  };
-
   return (
     <header className="idc-header">
       <div className="header-left">
@@ -77,14 +57,10 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="metric-badge hp-badge"></div>
 
         {/* Mode Pill */}
-        <div className={`metric-badge mode-badge mode-${mode.toLowerCase()}`}>
-          <span className="mode-dot"></span>
-        </div>
+        <div className={`metric-badge mode-badge mode-${mode.toLowerCase()}`} />
 
         {/* Day/Night */}
-        <div className="metric-badge cycle-badge">
-          <span>{getDayIcon()}</span>
-        </div>
+        <div className="metric-badge cycle-badge" />
 
         {/* Step Count */}
         <div className="metric-badge step-badge">

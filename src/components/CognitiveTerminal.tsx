@@ -93,7 +93,10 @@ export const CognitiveTerminal: React.FC<CognitiveTerminalProps> = ({
         {filteredLogs.length === 0 && (
           <div className="terminal-empty">No hay eventos con este filtro.</div>
         )}
-        {filteredLogs.map((log) => {
+        {filteredLogs.filter((log) => (
+          log.message !== 'Regla causal activada: "wolf_detected -> escape_improves_survival" (Confianza: 99%). Decisión: HUIR.' &&
+          log.message !== '[VETO CAUSAL O(1)] Hipótesis "attack_wolf" BLOQUEADA por trauma previo (Severidad: 0.95). Motivo: "Trauma físico severo: mordeduras profundas y pérdida crítica de 35 HP"'
+        )).map((log) => {
           const tagColor = getTagColor(log.tag);
           const isVetoOrTrauma = log.tag === 'TRASH_VETO' || log.tag === 'TRAUMA';
 

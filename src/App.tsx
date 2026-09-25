@@ -101,12 +101,6 @@ export const App: React.FC = () => {
     setTick((t) => t + 1);
   };
 
-  const handleSpawnWolf = () => {
-    world.spawnPredator();
-    agent.addLog('PERCEPTION', '¡Un nuevo lobo acechador ha aparecido en el glaciar!', true);
-    setTick((t) => t + 1);
-  };
-
   const handleSpawnFood = () => {
     world.spawnFood();
     agent.addLog('PERCEPTION', '¡Una fuente de bayas/carne ha caído en el terreno!', true);
@@ -207,19 +201,15 @@ export const App: React.FC = () => {
     <div className="idc-lab-app">
       {/* ── Top Header ────────────────────────────────────────── */}
       <Header
-        energy={agentState.energy}
-        hp={agentState.hp}
         mode={agentState.mode}
         isRunning={isRunning}
         speed={speed}
-        dayCycle={world.dayCycle}
         stepCount={agent.stepCount}
         curiosityIndex={agentState.curiosityIndex}
         onTogglePlay={() => setIsRunning(!isRunning)}
         onStep={performStep}
         onSetSpeed={(s) => setSpeed(s)}
         onReset={handleReset}
-        onSpawnWolf={handleSpawnWolf}
         onSpawnFood={handleSpawnFood}
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
@@ -398,7 +388,7 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* ── Modals ───────────────────────────────────────────── */}
+      {/* ── Modals ─────────────────────────────────────���─────── */}
       <ConnectionModal
         isOpen={isSettingsOpen}
         serverUrl={serverUrl}
